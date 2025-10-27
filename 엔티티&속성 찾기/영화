@@ -1,0 +1,40 @@
+[MOVIE] 영화 
+- MOVIE_ID : 영화 고유 식별자 (PK)
+- MOVIE_TILE : 영화명
+- GENRE : 장르
+- DIRECTOR : 감독명
+- CAST : 주요 출연진
+- OPEN_DT : 개봉일
+- RUNNING_TIME : 상영시간(분 단위)
+- RATING_GRADE : 관람등급 (예: 12세, 15세, 청불 등)
+- SUMMARY : 줄거리
+- POSTER_URL : 포스터 이미지 경로
+- STATUS_CD : 상영 상태 (‘상영중’, ‘예정’, ‘종료’)
+- REG_DT : 등록일
+- MOD_DT : 수정일
+
+[MOVIE_CATEGORY] 영화 카테고리
+- CATEGORY_ID : 카테고리 식별자
+- CATEGORY_TITLE : 카테고리명
+- DESCRIPTION : 설명
+
+[MOVIE_CATEGORY_REL] 
+- MOVIE_ID : 영화 ID (FK)
+- CATEGORY_ID : 카테고리 ID (FK)
+
+[MOVIE_STAT] 
+- MOVIE_ID : 영화 ID (FK)
+- RESERVATION_RATE : 예매율(%)
+- AUDIENCE_COUNT : 누적 관객수
+- MEGA_SCORE : 메가스코어(평점)
+- UPDATE_DT : 업데이트 일시
+
+[MOVIE_REVIEW] 리뷰
+- REVIEW_ID : 리뷰 고유 식별자 (PK)
+- MOVIE_ID : 영화 ID (FK)
+- MEMBER_ID : 회원 ID (FK)
+- SCORE : 평점 (1~10)
+- REVIEW_TXT : 리뷰 내용
+- STATUS_CD : 상태 (‘Y’: 노출, ‘N’: 비공개/삭제)
+- REG_DT : 작성일
+- MOD_DT : 수정일
