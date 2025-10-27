@@ -1,0 +1,38 @@
+* 엔터티, 속성, 관계  
+
+극장(Theater) :
+- 극장ID(theater_id)(PK), 지역ID(region_id)(FK), 극장이름(theater_name), 극장주소(theater_address), 극장연락처(theater_tel), 극장영업상태(theater_status)
+- 극장 n:1 지역, 극장 1:n 상영관
+
+영화(Movie) :
+- 영화ID(movie_id)(PK), 영화제목(movie_title), 러닝타임(runtime), 제작국가(production_country), 등급(age_rating), 개봉일자(release_date), 장르(genre)
+- 영화 1:n 상영시간표
+
+회원(User) :
+- 회원ID(user_id)(PK), 비밀번호(password), 회원명(user_name), 이메일(user_email), 전화번호(user_phone)
+- 회원 1:n 선호극장
+
+지역(Region) :
+- 지역ID(region_id)(PK), 지역명(region_name)
+- 지역 1:n 극장
+
+상영관(Screen) :
+- 상영관ID(screen_id)(PK), 극장ID(theater_id)(FK), 상영관종류(screen_type), 총좌석수(tot_seat)
+- 상영관 n:1 극장
+
+특별관(SpecialTheater) :
+- 상영관ID(screen_id)(FK), 상영관종류(screen_type)(FK), 총좌석수(tot_seat)(FK)
+
+이벤트(Event) :
+- 이벤트ID(event_id)(PK), 시작일(start_date), 종료일(end_date)
+
+선호극장(FavoriteTheater) :
+- 회원ID(user_id)(FK), 극장ID(theater_id)(FK)
+- 선호극장 n:1 회원, 선호극장 n:1 극장
+
+공지사항(Notice) :
+- 공지사항ID(notice_id)(PK), 극장ID(theater_id)(FK), 극장이름(theater_name)(FK), 작성일(post_date), 공지사항제목(notice_title)
+
+상영시간표(ShowTime) :
+- 상영시간표ID(showtime_id)(PK), 영화ID(movie_id)(FK), 상영관ID(screen_id)(FK), 상영일자(show_date), 시작시간(start_time), 종료시간(end_time), 남은좌석(available_seats)
+- 상영시간표 n:1 영화, 상영시간표 n:1 극장
