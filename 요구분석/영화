@@ -1,0 +1,21 @@
+영화
+
+영화 정보 및 분류 요구사항 (MOVIE, MOVIE_CATEGORY 등)
+① 관리자는 영화명(MOVIE_NM), 장르(GENRE), 감독(DIRECTOR), 출연진(CAST), 개봉일(OPEN_DT), 상영시간(RUNNING_TIME), 관람등급(RATING_GRADE), 줄거리(SUMMARY), 포스터 이미지(POSTER_URL) 등의 정보를 필수로 입력해야 한다.
+② 영화별 예매율(RESERVATION_RATE), 누적 관객수(AUDIENCE_COUNT), 평점(MEGA_SCORE)은 정기적으로 업데이트되어야 한다.
+③ 각 영화는 고유 식별자(MOVIE_ID)를 통해 고유하게 식별되어야 한다.
+④ 상영 상태는 STATUS_CD(‘상영중’, ‘예정’, ‘종료’)로 구분되어야 한다.
+⑤ 영화 등록일(REG_DT)과 수정일(MOD_DT)은 자동으로 기록되어야 한다.
+⑥ 영화 수정 시 이전 데이터는 이력으로 관리할 수 있어야 한다(선택사항).
+⑦ 영화는 여러 카테고리(Category)에 속할 수 있어야 한다. (예: 전체영화, 박스오피스, 상영예정작, MEGA ONLY 등)
+⑧ 카테고리는 CATEGORY_ID, CATEGORY_NM, DESCRIPTION 속성으로 관리되며, 중복 등록이 불가능해야 한다.
+⑨ 영화와 카테고리는 다대다 관계로, 연결 테이블 MOVIE_CATEGORY_REL이 필요하다.
+⑩ 영화별 통계 데이터(예매율, 누적관객수, 평점)는 MOVIE_STAT 테이블에 저장된다.
+⑪ 예매율은 예매 테이블(RESERVATION)에서 참조 가능해야 하며, 평점은 리뷰 테이블(MOVIE_REVIEW)에서 평균값으로 계산 가능해야 한다.
+⑫ 회원(MEMBER_ID)은 자신이 본 영화에 대해 평점(SCORE)과 리뷰내용(REVIEW_TXT)을 남길 수 있다.
+⑬ 리뷰 등록일(REG_DT)과 수정일(MOD_DT)을 관리해야 한다.
+⑭ 한 회원은 한 영화에 한 번만 리뷰를 등록할 수 있어야 한다.
+⑮ 부적절한 리뷰는 관리자에 의해 STATUS_CD(‘Y’/‘N’)로 제어되어야 한다.
+⑯ 영화 정보는 예매 파트의 상영정보(SCREENING)와 연결되어야 한다.
+⑰ 상영정보에는 THEATER_ID, SCREEN_ID, SHOW_DT, SEAT_CNT 등이 포함되어야 한다.
+⑱ 영화 삭제 시 상영정보 등 참조 무결성이 유지되도록 CASCADE 또는 RESTRICT 정책이 적용되어야 한다.
