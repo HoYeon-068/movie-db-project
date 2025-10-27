@@ -1,0 +1,9 @@
+이벤트(event)
+이벤트번호(event_id)(PK), 이벤트명(event_name), 시작일자(start_date), 종료일자(end_date), 이벤트유형(event_type), 이벤트상태(event_status), 
+상세내용(event_detail), 대표이미지(event_image), 영화ID(movie_id)(FK), 제휴사명(partner_name)(FK), 관리자ID(admin_id)(FK)
+
+제휴사(partner)
+제휴사명(partner_name)(PK), 제휴유형(partner_type), 연락처(partner_tel), 담당자(partner_manager)
+
+당첨자(winner)
+당첨ID(winner_id)(PK), 이벤트번호(event_id)(FK), 당첨일자(winner_date), 경품명(prize_name), 경품수량(prize_qty)
