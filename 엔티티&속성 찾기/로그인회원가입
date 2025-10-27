@@ -1,31 +1,39 @@
 [ 메가박스 로그인/회원가입 엔티티 ]
-1. MEMBER (회원 기본 정보) : 회원의 핵심 정보와 로그인 자격을 관리
-2. NON_MEMBER (비회원 예매 확인 정보) : 비회원이 예매 내역을 확인하는 데 필요한 정보를 예매 건별로 관리
-3. MEMBER_AUTH (인증번호 관리) : 휴대폰 본인 인증 등 일회성 인증번호 발송 및 유효성을 관리
-4. MEMBER_LOGIN_HISTORY (로그인 기록 저장) : 보안 감사를 위해 모든 로그인 시도 기록을 저장
-5. SNS_MEMBER (SNS 로그인 계정 매핑) : 네이버, 카카오 등 SNS 계정과 내부 MEMBER 계정을 연결
-6. TERMS (약관 마스터) : 서비스 약관의 내용을 관리
-7. MEMBER_TERMS_AGREE (약관 동의 이력) : 회원별 약관 동의 이력을 관리하여 중복 동의를 방지
+1, MEMBER (회원 핵심 정보 관리)
+2. NON_MEMBER (비회원 예매 확인 정보)
+3. MEMBER_AUTH (휴대폰 인증번호 관리)
+4. MEMBER_LOGIN_HISTORY (로그인 시도 기록 저장)
+5. SNS_MEMBER (SNS 계정 연결 정보)
+6. TERMS (서비스 약관 마스터)
+7. MEMBER_TERMS_AGREE (회원별 약관 동의 이력)
+8. CINEMA (영화관 기본 정보)
+
 
 
 [ 메가박스 로그인/회원가입 속성 ] 
 1. MEMBER (회원 기본 정보)
-MEM_ID, MEM_PW, MEM_PHONE, MEM_EMAIL, MEM_NM, MEM_BIRTH, JOIN_DT, STATUS_CD, IS_14_UNDER
+MEM_ID(회원의 고유 아이디), MEM_PW(비밀번호), MEM_NM(이름), MEM_BIRTH(생년월일), MEM_PHONE(휴대폰 번호), MEM_EMAIL(이메일 주소), JOIN_DT(가입일시), STATUS_CD(회원 상태 코드), IS_14_UNDER(14세 미만 여부), IS_MARKETING_AGREE(마케팅 활용 개인정보 전체 동의 여부), TICKET_MACHINE_USE(무인발권기 기능 사용 여부), FAV_CINEMA_ID(선호 영화관 ID), RECEIVE_PUSH(혜택 수신: 알림톡/PUSH 동의 여부), RECEIVE_SMS(혜택 수신: SMS 동의 여부), RECEIVE_EMAIL(혜택 수신: 이메일 동의 여부)
 
 2. NON_MEMBER (비회원 예매 확인 정보) 속성
-RESV_ID, NM_PW, NM_NM, NM_BIRTH, NM_PHONE
+RESV_ID(예매 번호), NM_PW(예매 확인 비밀번호), NM_NM(예매자 이름), NM_BIRTH(생년월일 6자리), NM_PHONE(휴대폰 번호)
 
 3. MEMBER_AUTH (인증번호 관리) 속성
-AUTH_ID, PHONE, AUTH_CODE, EXPIRED_AT, VERIFIED
+AUTH_ID(인증 요청 고유키), PHONE(인증 대상 번호), AUTH_CODE(발송된 인증번호), EXPIRED_AT(만료 시각), VERIFIED(인증 성공 여부)
 
 4. MEMBER_LOGIN_HISTORY (로그인 기록 저장) 속성
-HISTORY_ID, MEMBER_ID_FK, LOGIN_IP, SUCCESS, LOGIN_AT
+HISTORY_ID(로그인 로그 고유키), MEMBER_ID_FK(관련 회원 ID), LOGIN_IP(접속 IP 주소), SUCCESS(로그인 성공 여부), LOGIN_AT(로그인 시각)
 
 5. SNS_MEMBER (SNS 로그인 계정 매핑) 속성
-SNS_ID, MEMBER_ID_FK, SNS_TYPE, SNS_UNIQUE_KEY, LINKED_AT
+SNS_ID(SNS 매핑 고유키), MEMBER_ID_FK(회원 ID), SNS_TYPE(SNS 종류), SNS_UNIQUE_KEY(SNS 제공 고유번호), LINKED_AT(연결 시각)
 
 6. TERMS (약관 마스터) 속성
-TERMS_ID, TITLE, TYPE, CONTENT, VERSION, CREATED_AT
+TERMS_ID(약관 고유키), TITLE(약관 제목), TYPE(약관 종류), CONTENT(약관 전문), VERSION(약관 버전), CREATED_AT(생성일자)
 
 7. MEMBER_TERMS_AGREE (약관 동의 이력) 속성
-MEMBER_ID_FK, TERMS_ID_FK, AGREED_AT
+MEMBER_ID_FK(회원 ID), TERMS_ID_FK(약관 ID), AGREED_AT(동의 시각)
+
+
+8. CINEMA (영화관 마스터)
+CINEMA_ID(영화관 고유 식별자), CINEMA_NM(영화관 이름), REGION(영화관 지역 분류), LOCATION(영화관 상세 주소 또는 위치 정보)
+
+
