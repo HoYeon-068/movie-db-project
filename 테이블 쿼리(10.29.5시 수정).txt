@@ -1,0 +1,2028 @@
+/* 약관 마스터 */
+CREATE TABLE TERMS (
+	TERMS_ID NUMBER NOT NULL, /* 약관 고유키 */
+	TITLE VARCHAR2(255), /* 약관 제목 */
+	TYPE CHAR(10), /* 약관 종류 (REQUIRED/OPTIONAL) */
+	CONTENT CLOB, /* 약관 전문 (대용량 텍스트) */
+	VERSION VARCHAR2(20), /* 약관 버전 */
+	CREATED_AT TIMESTAMP /* 생성일자 */
+);
+
+COMMENT ON TABLE TERMS IS '약관 마스터';
+
+COMMENT ON COLUMN TERMS.TERMS_ID IS '약관 고유키';
+
+COMMENT ON COLUMN TERMS.TITLE IS '약관 제목';
+
+COMMENT ON COLUMN TERMS.TYPE IS '약관 종류 (REQUIRED/OPTIONAL)';
+
+COMMENT ON COLUMN TERMS.CONTENT IS '약관 전문 (대용량 텍스트)';
+
+COMMENT ON COLUMN TERMS.VERSION IS '약관 버전';
+
+COMMENT ON COLUMN TERMS.CREATED_AT IS '생성일자';
+
+CREATE UNIQUE INDEX PK_TERMS
+	ON TERMS (
+		TERMS_ID ASC
+	);
+
+ALTER TABLE TERMS
+	ADD
+		CONSTRAINT PK_TERMS
+		PRIMARY KEY (
+			TERMS_ID
+		);
+
+/* 로그인 기록 저장 */
+CREATE TABLE MEMBER_LG_HISTORY (
+	HISTORY_ID NUMBER NOT NULL, /* 로그인 로그 고유키 */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	LOGIN_IP VARCHAR2(50), /* 접속 IP 주소 */
+	SUCCESS CHAR(1), /* 로그인 성공 여부 */
+	LOGIN_AT TIMESTAMP /* 로그인 시각 */
+);
+
+COMMENT ON TABLE MEMBER_LG_HISTORY IS '로그인 기록 저장';
+
+COMMENT ON COLUMN MEMBER_LG_HISTORY.HISTORY_ID IS '로그인 로그 고유키';
+
+COMMENT ON COLUMN MEMBER_LG_HISTORY.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN MEMBER_LG_HISTORY.LOGIN_IP IS '접속 IP 주소';
+
+COMMENT ON COLUMN MEMBER_LG_HISTORY.SUCCESS IS '로그인 성공 여부';
+
+COMMENT ON COLUMN MEMBER_LG_HISTORY.LOGIN_AT IS '로그인 시각';
+
+CREATE UNIQUE INDEX PK_MEMBER_LG_HISTORY
+	ON MEMBER_LG_HISTORY (
+		HISTORY_ID ASC
+	);
+
+ALTER TABLE MEMBER_LG_HISTORY
+	ADD
+		CONSTRAINT PK_MEMBER_LG_HISTORY
+		PRIMARY KEY (
+			HISTORY_ID
+		);
+
+/* SNS 로그인 계정 매핑 */
+CREATE TABLE SNS_MEMBER (
+	SNS_ID NUMBER NOT NULL, /* SNS 매핑 고유키 */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	SNS_TYPE VARCHAR(20), /* SNS 종류 (NAVER, KAKAO 등) */
+	SNS_UNIQUE_KEY NUMBER, /* SNS 제공 고유번호 */
+	LINKED_AT DATE /* 연결 시각 */
+);
+
+COMMENT ON TABLE SNS_MEMBER IS 'SNS 로그인 계정 매핑';
+
+COMMENT ON COLUMN SNS_MEMBER.SNS_ID IS 'SNS 매핑 고유키';
+
+COMMENT ON COLUMN SNS_MEMBER.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN SNS_MEMBER.SNS_TYPE IS 'SNS 종류 (NAVER, KAKAO 등)';
+
+COMMENT ON COLUMN SNS_MEMBER.SNS_UNIQUE_KEY IS 'SNS 제공 고유번호';
+
+COMMENT ON COLUMN SNS_MEMBER.LINKED_AT IS '연결 시각';
+
+CREATE UNIQUE INDEX PK_SNS_MEMBER
+	ON SNS_MEMBER (
+		SNS_ID ASC
+	);
+
+ALTER TABLE SNS_MEMBER
+	ADD
+		CONSTRAINT PK_SNS_MEMBER
+		PRIMARY KEY (
+			SNS_ID
+		);
+
+/* 비회원 예매 확인 정보 */
+CREATE TABLE NON_MEMBER (
+	RESV_ID NUMBER NOT NULL, /* 예매 번호  */
+	NM_PW VARCHAR2(10), /* 예매 확인 비밀번호 (4자리) */
+	NM_NM NVARCHAR2(50), /* 예매자 이름 */
+	NM_BIRTH VARCHAR2(6), /* 생년월일 6자리 (YYMMDD) */
+	NM_PHONE VARCHAR2(15) /* 휴대폰 번호 */
+);
+
+COMMENT ON TABLE NON_MEMBER IS '비회원 예매 확인 정보';
+
+COMMENT ON COLUMN NON_MEMBER.RESV_ID IS '예매 번호 ';
+
+COMMENT ON COLUMN NON_MEMBER.NM_PW IS '예매 확인 비밀번호 (4자리)';
+
+COMMENT ON COLUMN NON_MEMBER.NM_NM IS '예매자 이름';
+
+COMMENT ON COLUMN NON_MEMBER.NM_BIRTH IS '생년월일 6자리 (YYMMDD)';
+
+COMMENT ON COLUMN NON_MEMBER.NM_PHONE IS '휴대폰 번호';
+
+CREATE UNIQUE INDEX PK_NON_MEMBER
+	ON NON_MEMBER (
+		RESV_ID ASC
+	);
+
+ALTER TABLE NON_MEMBER
+	ADD
+		CONSTRAINT PK_NON_MEMBER
+		PRIMARY KEY (
+			RESV_ID
+		);
+
+/* 인증번호 관리 */
+CREATE TABLE MEMBER_AUTH (
+	AUTH_ID NUMBER NOT NULL, /* 인증 요청 고유키  */
+	PHONE VARCHAR2(15), /* 인증 대상 번호 */
+	AUTH_CODE CHAR(6), /* 발송된 인증번호 (6자리) */
+	EXPIRED_AT TIMESTAMP, /* 만료 시각 */
+	VERIFIED CHAR(1) /* 인증 성공 여부 ('Y' 또는 'N') */
+);
+
+COMMENT ON TABLE MEMBER_AUTH IS '인증번호 관리';
+
+COMMENT ON COLUMN MEMBER_AUTH.AUTH_ID IS '인증 요청 고유키 ';
+
+COMMENT ON COLUMN MEMBER_AUTH.PHONE IS '인증 대상 번호';
+
+COMMENT ON COLUMN MEMBER_AUTH.AUTH_CODE IS '발송된 인증번호 (6자리)';
+
+COMMENT ON COLUMN MEMBER_AUTH.EXPIRED_AT IS '만료 시각';
+
+COMMENT ON COLUMN MEMBER_AUTH.VERIFIED IS '인증 성공 여부 (''Y'' 또는 ''N'')';
+
+CREATE UNIQUE INDEX PK_MEMBER_AUTH
+	ON MEMBER_AUTH (
+		AUTH_ID ASC
+	);
+
+ALTER TABLE MEMBER_AUTH
+	ADD
+		CONSTRAINT PK_MEMBER_AUTH
+		PRIMARY KEY (
+			AUTH_ID
+		);
+
+/* 회원 기본 정보 */
+CREATE TABLE MEMBER (
+	MEM_ID VARCHAR2(20) NOT NULL, /* 회원 id */
+	MEM_PW VARCHAR2(256), /* 비밀번호  */
+	MEM_NM VARCHAR2(50), /* 이름 */
+	MEM_BIRTH CHAR(8), /* 생년월일 (YYYYMMDD) */
+	MEM_PHONE VARCHAR2(15), /* 휴대폰 번호 */
+	MEM_EMAIL VARCHAR2(15), /* 이메일 주소 */
+	JOIN_DT TIMESTAMP, /* 가입일시 */
+	COL CHAR(1), /* 관리자 여부(Y/N) */
+	STATUS_CD CHAR(2), /* 회원 상태 코드 (예: 01-정상) */
+	IS_14_UNDER CHAR(1), /* 14세 미만 여부 */
+	IS_MARKETING_AGREE CHAR(1), /* 마케팅 활용 개인정보 전체 동의 여부 */
+	TICKET_MACHINE_USE CHAR(1), /* 무인발권기 기능 사용 여부 */
+	FAV_CINEMA_ID VARCHAR2(10), /* 선호 영화관 ID (CINEMA 테이블 참조) */
+	RECEIVE_PUSH CHAR(1), /* 혜택 수신: 알림톡/PUSH 동의 여부 */
+	RECEIVE_SMS CHAR(1), /* 혜택 수신: SMS 동의 여부 */
+	RECEIVE_EMAIL CHAR(1) /* 혜택 수신: 이메일 동의 여부 */
+);
+
+COMMENT ON TABLE MEMBER IS '회원 기본 정보';
+
+COMMENT ON COLUMN MEMBER.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN MEMBER.MEM_PW IS '비밀번호 ';
+
+COMMENT ON COLUMN MEMBER.MEM_NM IS '이름';
+
+COMMENT ON COLUMN MEMBER.MEM_BIRTH IS '생년월일 (YYYYMMDD)';
+
+COMMENT ON COLUMN MEMBER.MEM_PHONE IS '휴대폰 번호';
+
+COMMENT ON COLUMN MEMBER.MEM_EMAIL IS '이메일 주소';
+
+COMMENT ON COLUMN MEMBER.JOIN_DT IS '가입일시';
+
+COMMENT ON COLUMN MEMBER.COL IS '관리자 여부(Y/N)';
+
+COMMENT ON COLUMN MEMBER.STATUS_CD IS '회원 상태 코드 (예: 01-정상)';
+
+COMMENT ON COLUMN MEMBER.IS_14_UNDER IS '14세 미만 여부';
+
+COMMENT ON COLUMN MEMBER.IS_MARKETING_AGREE IS '마케팅 활용 개인정보 전체 동의 여부';
+
+COMMENT ON COLUMN MEMBER.TICKET_MACHINE_USE IS '무인발권기 기능 사용 여부';
+
+COMMENT ON COLUMN MEMBER.FAV_CINEMA_ID IS '선호 영화관 ID (CINEMA 테이블 참조)';
+
+COMMENT ON COLUMN MEMBER.RECEIVE_PUSH IS '혜택 수신: 알림톡/PUSH 동의 여부';
+
+COMMENT ON COLUMN MEMBER.RECEIVE_SMS IS '혜택 수신: SMS 동의 여부';
+
+COMMENT ON COLUMN MEMBER.RECEIVE_EMAIL IS '혜택 수신: 이메일 동의 여부';
+
+CREATE UNIQUE INDEX PK_MEMBER
+	ON MEMBER (
+		MEM_ID ASC
+	);
+
+ALTER TABLE MEMBER
+	ADD
+		CONSTRAINT PK_MEMBER
+		PRIMARY KEY (
+			MEM_ID
+		);
+
+/* 약관 동의 이력 */
+CREATE TABLE MEMBER_TM_AG (
+	MEM_ID VARCHAR2(20) NOT NULL, /* 회원 id */
+	TERMS_ID NUMBER, /* 약관 고유키 */
+	TERMS_ID_FK NUMBER, /* 약관 ID */
+	AGREED_AT TIMESTAMP /* 동의 시각 */
+);
+
+COMMENT ON TABLE MEMBER_TM_AG IS '약관 동의 이력';
+
+COMMENT ON COLUMN MEMBER_TM_AG.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN MEMBER_TM_AG.TERMS_ID IS '약관 고유키';
+
+COMMENT ON COLUMN MEMBER_TM_AG.TERMS_ID_FK IS '약관 ID';
+
+COMMENT ON COLUMN MEMBER_TM_AG.AGREED_AT IS '동의 시각';
+
+CREATE UNIQUE INDEX PK_MEMBER_TM_AG
+	ON MEMBER_TM_AG (
+		MEM_ID ASC
+	);
+
+ALTER TABLE MEMBER_TM_AG
+	ADD
+		CONSTRAINT PK_MEMBER_TM_AG
+		PRIMARY KEY (
+			MEM_ID
+		);
+
+/* 지역 */
+CREATE TABLE Region (
+	region_id NUMBER(2) NOT NULL, /* 지역ID */
+	region_name VARCHAR2(30) /* 지역명 */
+);
+
+COMMENT ON TABLE Region IS '지역';
+
+COMMENT ON COLUMN Region.region_id IS '지역ID';
+
+COMMENT ON COLUMN Region.region_name IS '지역명';
+
+CREATE UNIQUE INDEX PK_Region
+	ON Region (
+		region_id ASC
+	);
+
+ALTER TABLE Region
+	ADD
+		CONSTRAINT PK_Region
+		PRIMARY KEY (
+			region_id
+		);
+
+/* 상영관 */
+CREATE TABLE Screen (
+	screen_id NUMBER(2) NOT NULL, /* 상영관ID */
+	theater_id NUMBER(3), /* 극장ID */
+	screen_type VARCHAR2(200), /* 상영관종류 */
+	tot_seat NUMBER(3) /* 총좌석수 */
+);
+
+COMMENT ON TABLE Screen IS '상영관';
+
+COMMENT ON COLUMN Screen.screen_id IS '상영관ID';
+
+COMMENT ON COLUMN Screen.theater_id IS '극장ID';
+
+COMMENT ON COLUMN Screen.screen_type IS '상영관종류';
+
+COMMENT ON COLUMN Screen.tot_seat IS '총좌석수';
+
+CREATE UNIQUE INDEX PK_Screen
+	ON Screen (
+		screen_id ASC
+	);
+
+ALTER TABLE Screen
+	ADD
+		CONSTRAINT PK_Screen
+		PRIMARY KEY (
+			screen_id
+		);
+
+/* 선호극장 */
+CREATE TABLE FavoriteTheater (
+	favTheater_id NUMBER(2) NOT NULL, /* 선호극장ID */
+	theater_id NUMBER(3), /* 극장ID */
+	MEM_ID VARCHAR2(20) /* 회원 id */
+);
+
+COMMENT ON TABLE FavoriteTheater IS '선호극장';
+
+COMMENT ON COLUMN FavoriteTheater.favTheater_id IS '선호극장ID';
+
+COMMENT ON COLUMN FavoriteTheater.theater_id IS '극장ID';
+
+COMMENT ON COLUMN FavoriteTheater.MEM_ID IS '회원 id';
+
+CREATE UNIQUE INDEX PK_FavoriteTheater
+	ON FavoriteTheater (
+		favTheater_id ASC
+	);
+
+ALTER TABLE FavoriteTheater
+	ADD
+		CONSTRAINT PK_FavoriteTheater
+		PRIMARY KEY (
+			favTheater_id
+		);
+
+/* 관람료 */
+CREATE TABLE TicketPrice (
+	ticketPrice_id NUMBER(3) NOT NULL, /* 관람료ID */
+	theater_id NUMBER(3), /* 극장ID */
+	screen_id NUMBER(2), /* 상영관ID */
+	schedule_id NUMBER, /* 스케줄 id */
+	ticket_price NUMBER(6), /* 관람료 */
+	screen_type VARCHAR2(200), /* 상영관종류 */
+	day_of_week VARCHAR2(20), /* 요일 */
+	adult_or_teen VARCHAR2(20) /* 관람객구분 */
+);
+
+COMMENT ON TABLE TicketPrice IS '관람료';
+
+COMMENT ON COLUMN TicketPrice.ticketPrice_id IS '관람료ID';
+
+COMMENT ON COLUMN TicketPrice.theater_id IS '극장ID';
+
+COMMENT ON COLUMN TicketPrice.screen_id IS '상영관ID';
+
+COMMENT ON COLUMN TicketPrice.schedule_id IS '스케줄 id';
+
+COMMENT ON COLUMN TicketPrice.ticket_price IS '관람료';
+
+COMMENT ON COLUMN TicketPrice.screen_type IS '상영관종류';
+
+COMMENT ON COLUMN TicketPrice.day_of_week IS '요일';
+
+COMMENT ON COLUMN TicketPrice.adult_or_teen IS '관람객구분';
+
+CREATE UNIQUE INDEX PK_TicketPrice
+	ON TicketPrice (
+		ticketPrice_id ASC
+	);
+
+ALTER TABLE TicketPrice
+	ADD
+		CONSTRAINT PK_TicketPrice
+		PRIMARY KEY (
+			ticketPrice_id
+		);
+
+/* 극장 */
+CREATE TABLE Theater (
+	theater_id NUMBER(3) NOT NULL, /* 극장ID */
+	region_id NUMBER(2), /* 지역ID */
+	theater_name VARCHAR2(200), /* 극장이름 */
+	theater_address VARCHAR2(200) /* 극장주소 */
+);
+
+COMMENT ON TABLE Theater IS '극장';
+
+COMMENT ON COLUMN Theater.theater_id IS '극장ID';
+
+COMMENT ON COLUMN Theater.region_id IS '지역ID';
+
+COMMENT ON COLUMN Theater.theater_name IS '극장이름';
+
+COMMENT ON COLUMN Theater.theater_address IS '극장주소';
+
+CREATE UNIQUE INDEX PK_Theater
+	ON Theater (
+		theater_id ASC
+	);
+
+ALTER TABLE Theater
+	ADD
+		CONSTRAINT PK_Theater
+		PRIMARY KEY (
+			theater_id
+		);
+
+/* 극장정보 */
+CREATE TABLE TheaterInfo (
+	theaterInfo_id NUMBER(3) NOT NULL, /* 극장정보ID */
+	theater_id NUMBER(3), /* 극장ID */
+	facilities VARCHAR2(200), /* 보유시설 */
+	floor_guide VARCHAR2(4000), /* 층별안내 */
+	transit VARCHAR2(4000), /* 대중교통 */
+	parking VARCHAR2(4000), /* 주차 */
+	theater_address VARCHAR2(200) /* 극장주소 */
+);
+
+COMMENT ON TABLE TheaterInfo IS '극장정보';
+
+COMMENT ON COLUMN TheaterInfo.theaterInfo_id IS '극장정보ID';
+
+COMMENT ON COLUMN TheaterInfo.theater_id IS '극장ID';
+
+COMMENT ON COLUMN TheaterInfo.facilities IS '보유시설';
+
+COMMENT ON COLUMN TheaterInfo.floor_guide IS '층별안내';
+
+COMMENT ON COLUMN TheaterInfo.transit IS '대중교통';
+
+COMMENT ON COLUMN TheaterInfo.parking IS '주차';
+
+COMMENT ON COLUMN TheaterInfo.theater_address IS '극장주소';
+
+CREATE UNIQUE INDEX PK_TheaterInfo
+	ON TheaterInfo (
+		theaterInfo_id ASC
+	);
+
+ALTER TABLE TheaterInfo
+	ADD
+		CONSTRAINT PK_TheaterInfo
+		PRIMARY KEY (
+			theaterInfo_id
+		);
+
+/* 당첨자 */
+CREATE TABLE winner (
+	winner_id NUMBER NOT NULL, /* 당첨ID */
+	event_id NUMBER, /* 이벤트 번호 */
+	winner_date DATE, /* 당첨일자 */
+	prize_name VARCHAR(50), /* 경품명 */
+	prize_qty NUMBER /* 경품 수량 */
+);
+
+COMMENT ON TABLE winner IS '당첨자';
+
+COMMENT ON COLUMN winner.winner_id IS '당첨ID';
+
+COMMENT ON COLUMN winner.event_id IS '이벤트 번호';
+
+COMMENT ON COLUMN winner.winner_date IS '당첨일자';
+
+COMMENT ON COLUMN winner.prize_name IS '경품명';
+
+COMMENT ON COLUMN winner.prize_qty IS '경품 수량';
+
+CREATE UNIQUE INDEX PK_winner
+	ON winner (
+		winner_id ASC
+	);
+
+ALTER TABLE winner
+	ADD
+		CONSTRAINT PK_winner
+		PRIMARY KEY (
+			winner_id
+		);
+
+/* 이벤트 */
+CREATE TABLE event (
+	event_id NUMBER NOT NULL, /* 이벤트 번호 */
+	MEM_ID VARCHAR2(20), /* 회원 id(관리자) */
+	partner_name VARCHAR2(100), /* 제휴사명 */
+	MOVIE_ID NUMBER, /* 영화ID */
+	event_name VARCHAR2(50), /* 이벤트명 */
+	event_type VARCHAR2(50), /* 이벤트 유형 */
+	event_status VARCHAR2(20), /* 이벤트 상태 */
+	start_date DATE, /* 시작일자 */
+	end_date DATE, /* 종료일자 */
+	event_detail CLOB, /* 상세내용 */
+	event_image VARCHAR2(255) /* 대표 이미지 */
+);
+
+COMMENT ON TABLE event IS '이벤트';
+
+COMMENT ON COLUMN event.event_id IS '이벤트 번호';
+
+COMMENT ON COLUMN event.MEM_ID IS '회원 id(관리자)';
+
+COMMENT ON COLUMN event.partner_name IS '제휴사명';
+
+COMMENT ON COLUMN event.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN event.event_name IS '이벤트명';
+
+COMMENT ON COLUMN event.event_type IS '이벤트 유형';
+
+COMMENT ON COLUMN event.event_status IS '이벤트 상태';
+
+COMMENT ON COLUMN event.start_date IS '시작일자';
+
+COMMENT ON COLUMN event.end_date IS '종료일자';
+
+COMMENT ON COLUMN event.event_detail IS '상세내용';
+
+COMMENT ON COLUMN event.event_image IS '대표 이미지';
+
+CREATE UNIQUE INDEX PK_event
+	ON event (
+		event_id ASC
+	);
+
+ALTER TABLE event
+	ADD
+		CONSTRAINT PK_event
+		PRIMARY KEY (
+			event_id
+		);
+
+/* 제휴사 */
+CREATE TABLE partner (
+	partner_name VARCHAR2(100) NOT NULL, /* 제휴사명 */
+	partner_type VARCHAR2(50), /* 제휴유형 */
+	partner_tel VARCHAR2(20), /* 연락처 */
+	partner_manager VARCHAR2(50) /* 담당자 */
+);
+
+COMMENT ON TABLE partner IS '제휴사';
+
+COMMENT ON COLUMN partner.partner_name IS '제휴사명';
+
+COMMENT ON COLUMN partner.partner_type IS '제휴유형';
+
+COMMENT ON COLUMN partner.partner_tel IS '연락처';
+
+COMMENT ON COLUMN partner.partner_manager IS '담당자';
+
+CREATE UNIQUE INDEX PK_partner
+	ON partner (
+		partner_name ASC
+	);
+
+ALTER TABLE partner
+	ADD
+		CONSTRAINT PK_partner
+		PRIMARY KEY (
+			partner_name
+		);
+
+/* 상품 카테고리 */
+CREATE TABLE CATEGORY (
+	CATEGORY_ID NUMBER NOT NULL, /* 카테고리 ID */
+	CATEGORY_NM NVARCHAR2(50), /* 카테고리명 */
+	DESCRIPTION NVARCHAR2(200), /* 카테고리 설명 */
+	DISPLAY_ORDER NUMBER /* 정렬순서 */
+);
+
+COMMENT ON TABLE CATEGORY IS '상품 카테고리';
+
+COMMENT ON COLUMN CATEGORY.CATEGORY_ID IS '카테고리 ID';
+
+COMMENT ON COLUMN CATEGORY.CATEGORY_NM IS '카테고리명';
+
+COMMENT ON COLUMN CATEGORY.DESCRIPTION IS '카테고리 설명';
+
+COMMENT ON COLUMN CATEGORY.DISPLAY_ORDER IS '정렬순서';
+
+CREATE UNIQUE INDEX PK_CATEGORY
+	ON CATEGORY (
+		CATEGORY_ID ASC
+	);
+
+ALTER TABLE CATEGORY
+	ADD
+		CONSTRAINT PK_CATEGORY
+		PRIMARY KEY (
+			CATEGORY_ID
+		);
+
+/* 주문 상세 */
+CREATE TABLE ORDER_DETAIL (
+	ORDER_DETAIL_ID NUMBER NOT NULL, /* 주문 상세 ID */
+	ORDER_ID NUMBER, /* 주문 ID */
+	PRODUCT_ID NUMBER, /* 주문 상품 ID */
+	QUANTITY NUMBER, /* 주문 수량 */
+	UNIT_PRICE NUMBER, /* 단가 */
+	SUB_TOTAL NUMBER /* 소계 금액 ( 수량 X 단가 ) */
+);
+
+COMMENT ON TABLE ORDER_DETAIL IS '주문 상세';
+
+COMMENT ON COLUMN ORDER_DETAIL.ORDER_DETAIL_ID IS '주문 상세 ID';
+
+COMMENT ON COLUMN ORDER_DETAIL.ORDER_ID IS '주문 ID';
+
+COMMENT ON COLUMN ORDER_DETAIL.PRODUCT_ID IS '주문 상품 ID';
+
+COMMENT ON COLUMN ORDER_DETAIL.QUANTITY IS '주문 수량';
+
+COMMENT ON COLUMN ORDER_DETAIL.UNIT_PRICE IS '단가';
+
+COMMENT ON COLUMN ORDER_DETAIL.SUB_TOTAL IS '소계 금액 ( 수량 X 단가 )';
+
+CREATE UNIQUE INDEX PK_ORDER_DETAIL
+	ON ORDER_DETAIL (
+		ORDER_DETAIL_ID ASC
+	);
+
+ALTER TABLE ORDER_DETAIL
+	ADD
+		CONSTRAINT PK_ORDER_DETAIL
+		PRIMARY KEY (
+			ORDER_DETAIL_ID
+		);
+
+/* 쿠폰 */
+CREATE TABLE COUPON (
+	COUPON_ID NUMBER NOT NULL, /* 쿠폰 고유 번호 */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	COUPON_NM NVARCHAR2(100), /* 쿠폰명 ( 예: 영화 4천원 할인 쿠폰 ) */
+	DISCOUNT_PRICE NUMBER, /* 할인 금액 */
+	MIN_PURCHASE NUMBER, /* 최소 구매 금액 조건 */
+	EXPIRATION_DT DATE, /* 유효기간 */
+	USED_YN CHAR(1) /* 사용 여부 */
+);
+
+COMMENT ON TABLE COUPON IS '쿠폰';
+
+COMMENT ON COLUMN COUPON.COUPON_ID IS '쿠폰 고유 번호';
+
+COMMENT ON COLUMN COUPON.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN COUPON.COUPON_NM IS '쿠폰명 ( 예: 영화 4천원 할인 쿠폰 )';
+
+COMMENT ON COLUMN COUPON.DISCOUNT_PRICE IS '할인 금액';
+
+COMMENT ON COLUMN COUPON.MIN_PURCHASE IS '최소 구매 금액 조건';
+
+COMMENT ON COLUMN COUPON.EXPIRATION_DT IS '유효기간';
+
+COMMENT ON COLUMN COUPON.USED_YN IS '사용 여부';
+
+CREATE UNIQUE INDEX PK_COUPON
+	ON COUPON (
+		COUPON_ID ASC
+	);
+
+ALTER TABLE COUPON
+	ADD
+		CONSTRAINT PK_COUPON
+		PRIMARY KEY (
+			COUPON_ID
+		);
+
+/* 주문 */
+CREATE TABLE ORDER_PRO (
+	ORDER_ID NUMBER NOT NULL, /* 주문 ID */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	ORDER_DT TIMESTAMP, /* 주문 일시 */
+	TOTAL_PRICE NUMBER, /* 총 결제 금액 */
+	PAYMENT_METHOD VARCHAR(20), /* 결제 수단 ( 카드, 포인트 등) */
+	STATUS_CD CHAR(2), /* 주문 상태 ( 결제완료, 취소 등 ) */
+	COUPON_ID NUMBER /* 사용 쿠폰 ID ( 선택 ) */
+);
+
+COMMENT ON TABLE ORDER_PRO IS '주문';
+
+COMMENT ON COLUMN ORDER_PRO.ORDER_ID IS '주문 ID';
+
+COMMENT ON COLUMN ORDER_PRO.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN ORDER_PRO.ORDER_DT IS '주문 일시';
+
+COMMENT ON COLUMN ORDER_PRO.TOTAL_PRICE IS '총 결제 금액';
+
+COMMENT ON COLUMN ORDER_PRO.PAYMENT_METHOD IS '결제 수단 ( 카드, 포인트 등)';
+
+COMMENT ON COLUMN ORDER_PRO.STATUS_CD IS '주문 상태 ( 결제완료, 취소 등 )';
+
+COMMENT ON COLUMN ORDER_PRO.COUPON_ID IS '사용 쿠폰 ID ( 선택 )';
+
+CREATE UNIQUE INDEX PK_ORDER_PRO
+	ON ORDER_PRO (
+		ORDER_ID ASC
+	);
+
+ALTER TABLE ORDER_PRO
+	ADD
+		CONSTRAINT PK_ORDER_PRO
+		PRIMARY KEY (
+			ORDER_ID
+		);
+
+/* 포인트 기록 */
+CREATE TABLE POINT_HISTORY (
+	POINT_TXN_ID NUMBER NOT NULL, /* 포인트ID */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	CHANGE_POINT NUMBER, /* 변동 포인트 (± 값) */
+	REASON VARCHAR2(300), /* 적립/차감 사유 */
+	REG_DT TIMESTAMP /* 발생 일시 */
+);
+
+COMMENT ON TABLE POINT_HISTORY IS '포인트 기록';
+
+COMMENT ON COLUMN POINT_HISTORY.POINT_TXN_ID IS '포인트ID';
+
+COMMENT ON COLUMN POINT_HISTORY.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN POINT_HISTORY.CHANGE_POINT IS '변동 포인트 (± 값)';
+
+COMMENT ON COLUMN POINT_HISTORY.REASON IS '적립/차감 사유';
+
+COMMENT ON COLUMN POINT_HISTORY.REG_DT IS '발생 일시';
+
+CREATE UNIQUE INDEX PK_POINT_HISTORY
+	ON POINT_HISTORY (
+		POINT_TXN_ID ASC
+	);
+
+ALTER TABLE POINT_HISTORY
+	ADD
+		CONSTRAINT PK_POINT_HISTORY
+		PRIMARY KEY (
+			POINT_TXN_ID
+		);
+
+/* 상품 */
+CREATE TABLE PRODUCT (
+	PRODUCT_ID NUMBER NOT NULL, /* 상품 고유 번호 */
+	CATEGORY_ID NUMBER NOT NULL, /* 카테고리 ID */
+	PRODUCT_NM NVARCHAR2(100), /* 상품명 */
+	PRICE NUMBER, /* 상품 가격 */
+	DESCRIPTION NVARCHAR2(500), /* 상품 설명 */
+	IMAGE_URL VARCHAR(255), /* 상품 이미지 경로 */
+	STOCK_QTY NUMBER, /* 재고 수량 */
+	STATUS_CD CHAR(1), /* 판매 여부 (Y/N) */
+	REG_DT TIMESTAMP /* 등록일시  */
+);
+
+COMMENT ON TABLE PRODUCT IS '상품';
+
+COMMENT ON COLUMN PRODUCT.PRODUCT_ID IS '상품 고유 번호';
+
+COMMENT ON COLUMN PRODUCT.CATEGORY_ID IS '카테고리 ID';
+
+COMMENT ON COLUMN PRODUCT.PRODUCT_NM IS '상품명';
+
+COMMENT ON COLUMN PRODUCT.PRICE IS '상품 가격';
+
+COMMENT ON COLUMN PRODUCT.DESCRIPTION IS '상품 설명';
+
+COMMENT ON COLUMN PRODUCT.IMAGE_URL IS '상품 이미지 경로';
+
+COMMENT ON COLUMN PRODUCT.STOCK_QTY IS '재고 수량';
+
+COMMENT ON COLUMN PRODUCT.STATUS_CD IS '판매 여부 (Y/N)';
+
+COMMENT ON COLUMN PRODUCT.REG_DT IS '등록일시 ';
+
+CREATE UNIQUE INDEX PK_PRODUCT
+	ON PRODUCT (
+		PRODUCT_ID ASC
+	);
+
+ALTER TABLE PRODUCT
+	ADD
+		CONSTRAINT PK_PRODUCT
+		PRIMARY KEY (
+			PRODUCT_ID
+		);
+
+/* 장바구니 */
+CREATE TABLE CART (
+	CART_ID NUMBER NOT NULL, /* 장바구니 고유 ID */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	PRODUCT_ID NUMBER, /* 상품ID */
+	QUANTITY NUMBER, /* 수량 */
+	ADD_DT TIMESTAMP /* 추가 일시 */
+);
+
+COMMENT ON TABLE CART IS '장바구니';
+
+COMMENT ON COLUMN CART.CART_ID IS '장바구니 고유 ID';
+
+COMMENT ON COLUMN CART.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN CART.PRODUCT_ID IS '상품ID';
+
+COMMENT ON COLUMN CART.QUANTITY IS '수량';
+
+COMMENT ON COLUMN CART.ADD_DT IS '추가 일시';
+
+CREATE UNIQUE INDEX PK_CART
+	ON CART (
+		CART_ID ASC
+	);
+
+ALTER TABLE CART
+	ADD
+		CONSTRAINT PK_CART
+		PRIMARY KEY (
+			CART_ID
+		);
+
+/* 공지사항 */
+CREATE TABLE Notice (
+	notice_id NUMBER NOT NULL, /* 공지사항_ID */
+	MEM_ID VARCHAR2(20), /* 회원 id(관리자) */
+	theater_id NUMBER(3), /* 극장ID */
+	category VARCHAR2(20), /* 공지구분 */
+	title VARCHAR2(200) NOT NULL, /* 제목 */
+	notice_content CLOB NOT NULL, /* 내용 */
+	attachment VARCHAR2(255), /* 첨부파일 경로 */
+	created_at DATE, /* 등록일 */
+	updated_at DATE /* 수정일 */
+);
+
+COMMENT ON TABLE Notice IS '공지사항';
+
+COMMENT ON COLUMN Notice.notice_id IS '공지사항_ID';
+
+COMMENT ON COLUMN Notice.MEM_ID IS '회원 id(관리자)';
+
+COMMENT ON COLUMN Notice.theater_id IS '극장ID';
+
+COMMENT ON COLUMN Notice.category IS '공지구분';
+
+COMMENT ON COLUMN Notice.title IS '제목';
+
+COMMENT ON COLUMN Notice.notice_content IS '내용';
+
+COMMENT ON COLUMN Notice.attachment IS '첨부파일 경로';
+
+COMMENT ON COLUMN Notice.created_at IS '등록일';
+
+COMMENT ON COLUMN Notice.updated_at IS '수정일';
+
+CREATE UNIQUE INDEX PK_Notice
+	ON Notice (
+		notice_id ASC
+	);
+
+ALTER TABLE Notice
+	ADD
+		CONSTRAINT PK_Notice
+		PRIMARY KEY (
+			notice_id
+		);
+
+/* 분실물 문의 */
+CREATE TABLE Lost_item (
+	lost_id NUMBER NOT NULL, /* 분실물 문의_ID */
+	MEM_ID VARCHAR2(20), /* 회원 id(회원) */
+	theater_id NUMBER(3), /* 극장ID */
+	reporter_name VARCHAR2(50), /* 비회원 이름 */
+	phone VARCHAR2(20), /* 비회원 휴대폰번호 */
+	email VARCHAR2(100), /* 비회원 이메일 */
+	post_pw VARCHAR2(100), /* 비회원 게시글 비밀번호 */
+	title VARCHAR2(200) NOT NULL, /* 제목 */
+	content CLOB NOT NULL, /* 상세내용 */
+	status VARCHAR2(20), /* 처리상태 */
+	created_at DATE, /* 등록일 */
+	updated_at DATE /* 수정일 */
+);
+
+COMMENT ON TABLE Lost_item IS '분실물 문의';
+
+COMMENT ON COLUMN Lost_item.lost_id IS '분실물 문의_ID';
+
+COMMENT ON COLUMN Lost_item.MEM_ID IS '회원 id(회원)';
+
+COMMENT ON COLUMN Lost_item.theater_id IS '극장ID';
+
+COMMENT ON COLUMN Lost_item.reporter_name IS '비회원 이름';
+
+COMMENT ON COLUMN Lost_item.phone IS '비회원 휴대폰번호';
+
+COMMENT ON COLUMN Lost_item.email IS '비회원 이메일';
+
+COMMENT ON COLUMN Lost_item.post_pw IS '비회원 게시글 비밀번호';
+
+COMMENT ON COLUMN Lost_item.title IS '제목';
+
+COMMENT ON COLUMN Lost_item.content IS '상세내용';
+
+COMMENT ON COLUMN Lost_item.status IS '처리상태';
+
+COMMENT ON COLUMN Lost_item.created_at IS '등록일';
+
+COMMENT ON COLUMN Lost_item.updated_at IS '수정일';
+
+CREATE UNIQUE INDEX PK_Lost_item
+	ON Lost_item (
+		lost_id ASC
+	);
+
+ALTER TABLE Lost_item
+	ADD
+		CONSTRAINT PK_Lost_item
+		PRIMARY KEY (
+			lost_id
+		);
+
+/* FAQ 카테고리 */
+CREATE TABLE FAQ_category (
+	category_id NUMBER(5) NOT NULL, /* FAQ 카테고리_ID */
+	category_name VARCHAR(50) /* 카테고리명 */
+);
+
+COMMENT ON TABLE FAQ_category IS 'FAQ 카테고리';
+
+COMMENT ON COLUMN FAQ_category.category_id IS 'FAQ 카테고리_ID';
+
+COMMENT ON COLUMN FAQ_category.category_name IS '카테고리명';
+
+CREATE UNIQUE INDEX PK_FAQ_category
+	ON FAQ_category (
+		category_id ASC
+	);
+
+ALTER TABLE FAQ_category
+	ADD
+		CONSTRAINT PK_FAQ_category
+		PRIMARY KEY (
+			category_id
+		);
+
+/* 자주 묻는 질문(FAQ) */
+CREATE TABLE FAQ (
+	faq_id NUMBER(10) NOT NULL, /* 자주 묻는 질문_ID */
+	MEM_ID VARCHAR2(20), /* 회원 id (관리자) */
+	category_id NUMBER(5), /* FAQ 카테고리_ID */
+	question NUMBER(5), /* 질문 제목 */
+	answer VARCHAR2(200), /* 답변 내용 */
+	created_by DATE, /* 등록일 */
+	updated_at DATE /* 수정일 */
+);
+
+COMMENT ON TABLE FAQ IS '자주 묻는 질문(FAQ)';
+
+COMMENT ON COLUMN FAQ.faq_id IS '자주 묻는 질문_ID';
+
+COMMENT ON COLUMN FAQ.MEM_ID IS '회원 id (관리자)';
+
+COMMENT ON COLUMN FAQ.category_id IS 'FAQ 카테고리_ID';
+
+COMMENT ON COLUMN FAQ.question IS '질문 제목';
+
+COMMENT ON COLUMN FAQ.answer IS '답변 내용';
+
+COMMENT ON COLUMN FAQ.created_by IS '등록일';
+
+COMMENT ON COLUMN FAQ.updated_at IS '수정일';
+
+CREATE UNIQUE INDEX PK_FAQ
+	ON FAQ (
+		faq_id ASC
+	);
+
+ALTER TABLE FAQ
+	ADD
+		CONSTRAINT PK_FAQ
+		PRIMARY KEY (
+			faq_id
+		);
+
+/* 1:1문의 답변 */
+CREATE TABLE Inquiry_answer (
+	answer_id NUMBER NOT NULL, /* 1:1문의답변_ID */
+	MEM_ID VARCHAR2(20), /* 회원 id(관리자) */
+	admin_id NUMBER NOT NULL, /* 1:1문의_ID */
+	answer_content CLOB NOT NULL, /* 답변 내용 */
+	answered_at DATE /* 답변 등록일 */
+);
+
+COMMENT ON TABLE Inquiry_answer IS '1:1문의 답변';
+
+COMMENT ON COLUMN Inquiry_answer.answer_id IS '1:1문의답변_ID';
+
+COMMENT ON COLUMN Inquiry_answer.MEM_ID IS '회원 id(관리자)';
+
+COMMENT ON COLUMN Inquiry_answer.admin_id IS '1:1문의_ID';
+
+COMMENT ON COLUMN Inquiry_answer.answer_content IS '답변 내용';
+
+COMMENT ON COLUMN Inquiry_answer.answered_at IS '답변 등록일';
+
+CREATE UNIQUE INDEX PK_Inquiry_answer
+	ON Inquiry_answer (
+		answer_id ASC
+	);
+
+ALTER TABLE Inquiry_answer
+	ADD
+		CONSTRAINT PK_Inquiry_answer
+		PRIMARY KEY (
+			answer_id
+		);
+
+/* 1:1문의 */
+CREATE TABLE Inquiry (
+	inquiry_id NUMBER NOT NULL, /* 1:1문의_ID */
+	MEM_ID VARCHAR2(20), /* 회원 id(회원) */
+	inquirer_name NUMBER, /* 비회원 이름 */
+	phone VARCHAR2(20), /* 비회원 휴대폰번호 */
+	email VARCHAR2(100), /* 비회원 이메일 */
+	post_pw VARCHAR2(100), /* 비회원 게시글 비밀번호 */
+	inquiry_type VARCHAR2(50) NOT NULL, /* 문의유형 */
+	title VARCHAR2(200) NOT NULL, /* 제목 */
+	inquiry_content CLOB NOT NULL, /* 문의내용 */
+	attachment VARCHAR2(255), /* 첨부파일 경로 */
+	inquiry_status VARCHAR2(20), /* 상태 */
+	created_at DATE, /* 등록일 */
+	answer_at DATE /* 답변일 */
+);
+
+COMMENT ON TABLE Inquiry IS '1:1문의';
+
+COMMENT ON COLUMN Inquiry.inquiry_id IS '1:1문의_ID';
+
+COMMENT ON COLUMN Inquiry.MEM_ID IS '회원 id(회원)';
+
+COMMENT ON COLUMN Inquiry.inquirer_name IS '비회원 이름';
+
+COMMENT ON COLUMN Inquiry.phone IS '비회원 휴대폰번호';
+
+COMMENT ON COLUMN Inquiry.email IS '비회원 이메일';
+
+COMMENT ON COLUMN Inquiry.post_pw IS '비회원 게시글 비밀번호';
+
+COMMENT ON COLUMN Inquiry.inquiry_type IS '문의유형';
+
+COMMENT ON COLUMN Inquiry.title IS '제목';
+
+COMMENT ON COLUMN Inquiry.inquiry_content IS '문의내용';
+
+COMMENT ON COLUMN Inquiry.attachment IS '첨부파일 경로';
+
+COMMENT ON COLUMN Inquiry.inquiry_status IS '상태';
+
+COMMENT ON COLUMN Inquiry.created_at IS '등록일';
+
+COMMENT ON COLUMN Inquiry.answer_at IS '답변일';
+
+CREATE UNIQUE INDEX PK_Inquiry
+	ON Inquiry (
+		inquiry_id ASC
+	);
+
+ALTER TABLE Inquiry
+	ADD
+		CONSTRAINT PK_Inquiry
+		PRIMARY KEY (
+			inquiry_id
+		);
+
+/* 스케줄 */
+CREATE TABLE SCHEDULE (
+	schedule_id NUMBER NOT NULL, /* 스케줄 id */
+	schedule_des_id NUMBER, /* 스케줄 특이사항 id */
+	screen_id NUMBER(2), /* 상영관ID */
+	MOVIE_ID NUMBER, /* 영화ID */
+	start_date DATE /* 시작시간 */
+);
+
+COMMENT ON TABLE SCHEDULE IS '스케줄';
+
+COMMENT ON COLUMN SCHEDULE.schedule_id IS '스케줄 id';
+
+COMMENT ON COLUMN SCHEDULE.schedule_des_id IS '스케줄 특이사항 id';
+
+COMMENT ON COLUMN SCHEDULE.screen_id IS '상영관ID';
+
+COMMENT ON COLUMN SCHEDULE.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN SCHEDULE.start_date IS '시작시간';
+
+CREATE UNIQUE INDEX PK_SCHEDULE
+	ON SCHEDULE (
+		schedule_id ASC
+	);
+
+ALTER TABLE SCHEDULE
+	ADD
+		CONSTRAINT PK_SCHEDULE
+		PRIMARY KEY (
+			schedule_id
+		);
+
+/* 좌석 */
+CREATE TABLE SEAT (
+	seat_id NUMBER NOT NULL, /* 좌석 id */
+	screen_id NUMBER(2), /* 상영관ID */
+	seat_type_id NUMBER, /* 좌석종류 id */
+	seat_row VARCHAR(3), /* 행 */
+	seat_col NUMBER(3) /* 열 */
+);
+
+COMMENT ON TABLE SEAT IS '좌석';
+
+COMMENT ON COLUMN SEAT.seat_id IS '좌석 id';
+
+COMMENT ON COLUMN SEAT.screen_id IS '상영관ID';
+
+COMMENT ON COLUMN SEAT.seat_type_id IS '좌석종류 id';
+
+COMMENT ON COLUMN SEAT.seat_row IS '행';
+
+COMMENT ON COLUMN SEAT.seat_col IS '열';
+
+CREATE UNIQUE INDEX PK_SEAT
+	ON SEAT (
+		seat_id ASC
+	);
+
+ALTER TABLE SEAT
+	ADD
+		CONSTRAINT PK_SEAT
+		PRIMARY KEY (
+			seat_id
+		);
+
+/* 예매 현황 */
+CREATE TABLE MOVIE_RESERV (
+	COL NUMBER NOT NULL, /* 예매 현황 id */
+	seat_id NUMBER, /* 좌석 id */
+	schedule_id NUMBER /* 스케줄 id */
+);
+
+COMMENT ON TABLE MOVIE_RESERV IS '예매 현황';
+
+COMMENT ON COLUMN MOVIE_RESERV.COL IS '예매 현황 id';
+
+COMMENT ON COLUMN MOVIE_RESERV.seat_id IS '좌석 id';
+
+COMMENT ON COLUMN MOVIE_RESERV.schedule_id IS '스케줄 id';
+
+CREATE UNIQUE INDEX PK_MOVIE_RESERV
+	ON MOVIE_RESERV (
+		COL ASC
+	);
+
+ALTER TABLE MOVIE_RESERV
+	ADD
+		CONSTRAINT PK_MOVIE_RESERV
+		PRIMARY KEY (
+			COL
+		);
+
+/* 스케줄 특이사항 */
+CREATE TABLE SCHEDULE_DES (
+	schedule_des_id NUMBER NOT NULL, /* 스케줄 특이사항 id */
+	schedule_des VARCHAR2(300) /* 특이사항 내용 */
+);
+
+COMMENT ON TABLE SCHEDULE_DES IS '스케줄 특이사항';
+
+COMMENT ON COLUMN SCHEDULE_DES.schedule_des_id IS '스케줄 특이사항 id';
+
+COMMENT ON COLUMN SCHEDULE_DES.schedule_des IS '특이사항 내용';
+
+CREATE UNIQUE INDEX PK_SCHEDULE_DES
+	ON SCHEDULE_DES (
+		schedule_des_id ASC
+	);
+
+ALTER TABLE SCHEDULE_DES
+	ADD
+		CONSTRAINT PK_SCHEDULE_DES
+		PRIMARY KEY (
+			schedule_des_id
+		);
+
+/* 좌석종류 */
+CREATE TABLE SEAT_TYPE (
+	seat_type_id NUMBER NOT NULL, /* 좌석종류 id */
+	seat_type VARCHAR(50) /* 좌석 종류 */
+);
+
+COMMENT ON TABLE SEAT_TYPE IS '좌석종류';
+
+COMMENT ON COLUMN SEAT_TYPE.seat_type_id IS '좌석종류 id';
+
+COMMENT ON COLUMN SEAT_TYPE.seat_type IS '좌석 종류';
+
+CREATE UNIQUE INDEX PK_SEAT_TYPE
+	ON SEAT_TYPE (
+		seat_type_id ASC
+	);
+
+ALTER TABLE SEAT_TYPE
+	ADD
+		CONSTRAINT PK_SEAT_TYPE
+		PRIMARY KEY (
+			seat_type_id
+		);
+
+/* 출연진 */
+CREATE TABLE Cast (
+	CAST_ID NUMBER NOT NULL, /* 출연진ID */
+	CAST_NAME VARCHAR2(20) NOT NULL /* 출연진이름 */
+);
+
+COMMENT ON TABLE Cast IS '출연진';
+
+COMMENT ON COLUMN Cast.CAST_ID IS '출연진ID';
+
+COMMENT ON COLUMN Cast.CAST_NAME IS '출연진이름';
+
+CREATE UNIQUE INDEX PK_Cast
+	ON Cast (
+		CAST_ID ASC
+	);
+
+ALTER TABLE Cast
+	ADD
+		CONSTRAINT PK_Cast
+		PRIMARY KEY (
+			CAST_ID
+		);
+
+/* 출연진-영화 관계 */
+CREATE TABLE MOVIE_CAST_REL (
+	MOVIE_CAST_REL_ID NUMBER NOT NULL, /* ID */
+	MOVIE_ID NUMBER NOT NULL, /* 영화ID */
+	CAST_ID NUMBER NOT NULL /* 출연진ID */
+);
+
+COMMENT ON TABLE MOVIE_CAST_REL IS '출연진-영화 관계';
+
+COMMENT ON COLUMN MOVIE_CAST_REL.MOVIE_CAST_REL_ID IS 'ID';
+
+COMMENT ON COLUMN MOVIE_CAST_REL.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN MOVIE_CAST_REL.CAST_ID IS '출연진ID';
+
+CREATE UNIQUE INDEX PK_MOVIE_CAST_REL
+	ON MOVIE_CAST_REL (
+		MOVIE_CAST_REL_ID ASC
+	);
+
+ALTER TABLE MOVIE_CAST_REL
+	ADD
+		CONSTRAINT PK_MOVIE_CAST_REL
+		PRIMARY KEY (
+			MOVIE_CAST_REL_ID
+		);
+
+/* 관계 */
+CREATE TABLE TABLE3 (
+	COL NUMBER NOT NULL, /* 관계ID */
+	 REVIEW_ID NUMBER NOT NULL, /* 리뷰ID */
+	VIEWPOINT_ID NUMBER NOT NULL /* 관람포인트ID */
+);
+
+COMMENT ON TABLE TABLE3 IS '관계';
+
+COMMENT ON COLUMN TABLE3.COL IS '관계ID';
+
+COMMENT ON COLUMN TABLE3. REVIEW_ID IS '리뷰ID';
+
+COMMENT ON COLUMN TABLE3.VIEWPOINT_ID IS '관람포인트ID';
+
+CREATE UNIQUE INDEX PK_TABLE3
+	ON TABLE3 (
+		COL ASC
+	);
+
+ALTER TABLE TABLE3
+	ADD
+		CONSTRAINT PK_TABLE3
+		PRIMARY KEY (
+			COL
+		);
+
+/* 관람포인트 */
+CREATE TABLE VIEWPOINT_TBL (
+	VIEWPOINT_ID NUMBER NOT NULL, /* 관람포인트ID */
+	VIEWPOINT_NAME VARCHAR2(10) NOT NULL /* 관람포인트 */
+);
+
+COMMENT ON TABLE VIEWPOINT_TBL IS '관람포인트';
+
+COMMENT ON COLUMN VIEWPOINT_TBL.VIEWPOINT_ID IS '관람포인트ID';
+
+COMMENT ON COLUMN VIEWPOINT_TBL.VIEWPOINT_NAME IS '관람포인트';
+
+CREATE UNIQUE INDEX PK_VIEWPOINT_TBL
+	ON VIEWPOINT_TBL (
+		VIEWPOINT_ID ASC
+	);
+
+ALTER TABLE VIEWPOINT_TBL
+	ADD
+		CONSTRAINT PK_VIEWPOINT_TBL
+		PRIMARY KEY (
+			VIEWPOINT_ID
+		);
+
+/* 영화 카테고리 */
+CREATE TABLE MOVIE_CATEGORY (
+	CATEGORY_ID NUMBER NOT NULL, /* 카테고리ID */
+	CATEGORY_TITLE VARCHAR2(30) NOT NULL /* 카테고리명 */
+);
+
+COMMENT ON TABLE MOVIE_CATEGORY IS '영화 카테고리';
+
+COMMENT ON COLUMN MOVIE_CATEGORY.CATEGORY_ID IS '카테고리ID';
+
+COMMENT ON COLUMN MOVIE_CATEGORY.CATEGORY_TITLE IS '카테고리명';
+
+CREATE UNIQUE INDEX PK_MOVIE_CATEGORY
+	ON MOVIE_CATEGORY (
+		CATEGORY_ID ASC
+	);
+
+ALTER TABLE MOVIE_CATEGORY
+	ADD
+		CONSTRAINT PK_MOVIE_CATEGORY
+		PRIMARY KEY (
+			CATEGORY_ID
+		);
+
+/* 상영타입 */
+CREATE TABLE SCREEN_TYPE_TBL (
+	SCREEN_TYPE_ID NUMBER NOT NULL, /* 상영타입ID */
+	SCREEN_TYPE VARCHAR2(20) NOT NULL /* 상영타입 */
+);
+
+COMMENT ON TABLE SCREEN_TYPE_TBL IS '상영타입';
+
+COMMENT ON COLUMN SCREEN_TYPE_TBL.SCREEN_TYPE_ID IS '상영타입ID';
+
+COMMENT ON COLUMN SCREEN_TYPE_TBL.SCREEN_TYPE IS '상영타입';
+
+CREATE UNIQUE INDEX PK_SCREEN_TYPE_TBL
+	ON SCREEN_TYPE_TBL (
+		SCREEN_TYPE_ID ASC
+	);
+
+ALTER TABLE SCREEN_TYPE_TBL
+	ADD
+		CONSTRAINT PK_SCREEN_TYPE_TBL
+		PRIMARY KEY (
+			SCREEN_TYPE_ID
+		);
+
+/* 리뷰 */
+CREATE TABLE MOVIE_REVIEW (
+	 REVIEW_ID NUMBER NOT NULL, /* 리뷰ID */
+	MEM_ID VARCHAR2(20), /* 회원 id */
+	MOVIE_ID NUMBER NOT NULL, /* 영화ID */
+	SCORE NUMBER NOT NULL, /* 평점 */
+	REVIEW_TXT VARCHAR2(300) NOT NULL, /* 리뷰내용 */
+	REG_DT DATE NOT NULL, /* 작성일 */
+	MOD_DT DATE NOT NULL, /* 수정일 */
+	REVIEW_LIKE NUMBER /* 추천 */
+);
+
+COMMENT ON TABLE MOVIE_REVIEW IS '리뷰';
+
+COMMENT ON COLUMN MOVIE_REVIEW. REVIEW_ID IS '리뷰ID';
+
+COMMENT ON COLUMN MOVIE_REVIEW.MEM_ID IS '회원 id';
+
+COMMENT ON COLUMN MOVIE_REVIEW.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN MOVIE_REVIEW.SCORE IS '평점';
+
+COMMENT ON COLUMN MOVIE_REVIEW.REVIEW_TXT IS '리뷰내용';
+
+COMMENT ON COLUMN MOVIE_REVIEW.REG_DT IS '작성일';
+
+COMMENT ON COLUMN MOVIE_REVIEW.MOD_DT IS '수정일';
+
+COMMENT ON COLUMN MOVIE_REVIEW.REVIEW_LIKE IS '추천';
+
+CREATE UNIQUE INDEX PK_MOVIE_REVIEW
+	ON MOVIE_REVIEW (
+		 REVIEW_ID ASC
+	);
+
+ALTER TABLE MOVIE_REVIEW
+	ADD
+		CONSTRAINT PK_MOVIE_REVIEW
+		PRIMARY KEY (
+			 REVIEW_ID
+		);
+
+/*  영화 통계 */
+CREATE TABLE MOVIE_STAT (
+	RESERVATION_RATE NUMBER NOT NULL, /* 예매율 */
+	AUDIENCE_COUNT NUMBER NOT NULL, /* 누적 관객수 */
+	UPDATE_DT DATE NOT NULL, /* 업데이트 일시 */
+	MOVIE_ID NUMBER NOT NULL /* 영화ID */
+);
+
+COMMENT ON TABLE MOVIE_STAT IS ' 영화 통계';
+
+COMMENT ON COLUMN MOVIE_STAT.RESERVATION_RATE IS '예매율';
+
+COMMENT ON COLUMN MOVIE_STAT.AUDIENCE_COUNT IS '누적 관객수';
+
+COMMENT ON COLUMN MOVIE_STAT.UPDATE_DT IS '업데이트 일시';
+
+COMMENT ON COLUMN MOVIE_STAT.MOVIE_ID IS '영화ID';
+
+/* 영화 - 카테고리 관계 */
+CREATE TABLE MOVIE_CATEGORY_REL (
+	MOVIE_CATEGORY_REL NUMBER NOT NULL, /* 영화-카테고리관계ID */
+	CATEGORY_ID NUMBER NOT NULL, /* 카테고리ID */
+	MOVIE_ID NUMBER NOT NULL /* 영화ID */
+);
+
+COMMENT ON TABLE MOVIE_CATEGORY_REL IS '영화 - 카테고리 관계';
+
+COMMENT ON COLUMN MOVIE_CATEGORY_REL.MOVIE_CATEGORY_REL IS '영화-카테고리관계ID';
+
+COMMENT ON COLUMN MOVIE_CATEGORY_REL.CATEGORY_ID IS '카테고리ID';
+
+COMMENT ON COLUMN MOVIE_CATEGORY_REL.MOVIE_ID IS '영화ID';
+
+CREATE UNIQUE INDEX PK_MOVIE_CATEGORY_REL
+	ON MOVIE_CATEGORY_REL (
+		MOVIE_CATEGORY_REL ASC
+	);
+
+ALTER TABLE MOVIE_CATEGORY_REL
+	ADD
+		CONSTRAINT PK_MOVIE_CATEGORY_REL
+		PRIMARY KEY (
+			MOVIE_CATEGORY_REL
+		);
+
+/* 영화-상영타입 관계 */
+CREATE TABLE SCREEN_TYPE_TBL_REL (
+	MOVIE_SCREEN_TYPE_REL_ID NUMBER NOT NULL, /* 영화-상영타입 관계 ID */
+	MOVIE_ID NUMBER NOT NULL, /* 영화ID */
+	SCREEN_TYPE_ID NUMBER NOT NULL /* 상영타입ID */
+);
+
+COMMENT ON TABLE SCREEN_TYPE_TBL_REL IS '영화-상영타입 관계';
+
+COMMENT ON COLUMN SCREEN_TYPE_TBL_REL.MOVIE_SCREEN_TYPE_REL_ID IS '영화-상영타입 관계 ID';
+
+COMMENT ON COLUMN SCREEN_TYPE_TBL_REL.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN SCREEN_TYPE_TBL_REL.SCREEN_TYPE_ID IS '상영타입ID';
+
+CREATE UNIQUE INDEX PK_S_T_R
+	ON SCREEN_TYPE_TBL_REL (
+		MOVIE_SCREEN_TYPE_REL_ID ASC
+	);
+
+ALTER TABLE SCREEN_TYPE_TBL_REL
+	ADD
+		CONSTRAINT PK_S_T_R
+		PRIMARY KEY (
+			MOVIE_SCREEN_TYPE_REL_ID
+		);
+
+/* 영화 */
+CREATE TABLE MOVIE (
+	MOVIE_ID NUMBER NOT NULL, /* 영화ID */
+	MOVIE_TILE VARCHAR2(30) NOT NULL, /* 영화명 */
+	GENRE VARCHAR2(10) NOT NULL, /* 장르 */
+	DIRECTOR VARCHAR2(20) NOT NULL, /* 감독 */
+	OPEN_DT DATE NOT NULL, /* 개봉일 */
+	RUNNING_TIME NUMBER NOT NULL, /* 상영시간 */
+	RATING_GRADE VARCHAR2(10) NOT NULL, /* 관람등급 */
+	SUMMARY VARCHAR2(50) NOT NULL, /* 줄거리 */
+	POSTER_URL VARCHAR2(40) NOT NULL, /* 포스터 이미지 경로 */
+	STATUS_CD VARCHAR2(10) NOT NULL, /* 상영 상태 */
+	REG_DT DATE NOT NULL, /* 등록일 */
+	MOD_DT DATE NOT NULL, /* 수정일 */
+	HEART NUMBER /* 하트 */
+);
+
+COMMENT ON TABLE MOVIE IS '영화';
+
+COMMENT ON COLUMN MOVIE.MOVIE_ID IS '영화ID';
+
+COMMENT ON COLUMN MOVIE.MOVIE_TILE IS '영화명';
+
+COMMENT ON COLUMN MOVIE.GENRE IS '장르';
+
+COMMENT ON COLUMN MOVIE.DIRECTOR IS '감독';
+
+COMMENT ON COLUMN MOVIE.OPEN_DT IS '개봉일';
+
+COMMENT ON COLUMN MOVIE.RUNNING_TIME IS '상영시간';
+
+COMMENT ON COLUMN MOVIE.RATING_GRADE IS '관람등급';
+
+COMMENT ON COLUMN MOVIE.SUMMARY IS '줄거리';
+
+COMMENT ON COLUMN MOVIE.POSTER_URL IS '포스터 이미지 경로';
+
+COMMENT ON COLUMN MOVIE.STATUS_CD IS '상영 상태';
+
+COMMENT ON COLUMN MOVIE.REG_DT IS '등록일';
+
+COMMENT ON COLUMN MOVIE.MOD_DT IS '수정일';
+
+COMMENT ON COLUMN MOVIE.HEART IS '하트';
+
+CREATE UNIQUE INDEX PK_MOVIE
+	ON MOVIE (
+		MOVIE_ID ASC
+	);
+
+ALTER TABLE MOVIE
+	ADD
+		CONSTRAINT PK_MOVIE
+		PRIMARY KEY (
+			MOVIE_ID
+		);
+
+ALTER TABLE MEMBER_LG_HISTORY
+	ADD
+		CONSTRAINT FK_MEMBER_TO_MEMBER_LG_HISTORY
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE SNS_MEMBER
+	ADD
+		CONSTRAINT FK_MEMBER_TO_SNS_MEMBER
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE MEMBER_TM_AG
+	ADD
+		CONSTRAINT FK_MEMBER_TO_MEMBER_TM_AG
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE MEMBER_TM_AG
+	ADD
+		CONSTRAINT FK_TERMS_TO_MEMBER_TM_AG
+		FOREIGN KEY (
+			TERMS_ID
+		)
+		REFERENCES TERMS (
+			TERMS_ID
+		);
+
+ALTER TABLE Screen
+	ADD
+		CONSTRAINT FK_Theater_TO_Screen
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE FavoriteTheater
+	ADD
+		CONSTRAINT FK_Theater_TO_FavoriteTheater
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE FavoriteTheater
+	ADD
+		CONSTRAINT FK_MEMBER_TO_FavoriteTheater
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE TicketPrice
+	ADD
+		CONSTRAINT FK_Theater_TO_TicketPrice
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE TicketPrice
+	ADD
+		CONSTRAINT FK_Screen_TO_TicketPrice
+		FOREIGN KEY (
+			screen_id
+		)
+		REFERENCES Screen (
+			screen_id
+		);
+
+ALTER TABLE TicketPrice
+	ADD
+		CONSTRAINT FK_SCHEDULE_TO_TicketPrice
+		FOREIGN KEY (
+			schedule_id
+		)
+		REFERENCES SCHEDULE (
+			schedule_id
+		);
+
+ALTER TABLE Theater
+	ADD
+		CONSTRAINT FK_Region_TO_Theater
+		FOREIGN KEY (
+			region_id
+		)
+		REFERENCES Region (
+			region_id
+		);
+
+ALTER TABLE TheaterInfo
+	ADD
+		CONSTRAINT FK_Theater_TO_TheaterInfo
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE winner
+	ADD
+		CONSTRAINT FK_event_TO_winner
+		FOREIGN KEY (
+			event_id
+		)
+		REFERENCES event (
+			event_id
+		);
+
+ALTER TABLE event
+	ADD
+		CONSTRAINT FK_partner_TO_event
+		FOREIGN KEY (
+			partner_name
+		)
+		REFERENCES partner (
+			partner_name
+		);
+
+ALTER TABLE event
+	ADD
+		CONSTRAINT FK_MEMBER_TO_event
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE event
+	ADD
+		CONSTRAINT FK_MOVIE_TO_event
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE ORDER_DETAIL
+	ADD
+		CONSTRAINT FK_ORDER_PRO_TO_ORDER_DETAIL
+		FOREIGN KEY (
+			ORDER_ID
+		)
+		REFERENCES ORDER_PRO (
+			ORDER_ID
+		);
+
+ALTER TABLE COUPON
+	ADD
+		CONSTRAINT FK_MEMBER_TO_COUPON
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE ORDER_PRO
+	ADD
+		CONSTRAINT FK_MEMBER_TO_ORDER_PRO
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE POINT_HISTORY
+	ADD
+		CONSTRAINT FK_MEMBER_TO_POINT_HISTORY
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE PRODUCT
+	ADD
+		CONSTRAINT FK_CATEGORY_TO_PRODUCT
+		FOREIGN KEY (
+			CATEGORY_ID
+		)
+		REFERENCES CATEGORY (
+			CATEGORY_ID
+		);
+
+ALTER TABLE CART
+	ADD
+		CONSTRAINT FK_MEMBER_TO_CART
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE Notice
+	ADD
+		CONSTRAINT FK_MEMBER_TO_Notice
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE Notice
+	ADD
+		CONSTRAINT FK_Theater_TO_Notice
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE Lost_item
+	ADD
+		CONSTRAINT FK_MEMBER_TO_Lost_item
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE Lost_item
+	ADD
+		CONSTRAINT FK_Theater_TO_Lost_item
+		FOREIGN KEY (
+			theater_id
+		)
+		REFERENCES Theater (
+			theater_id
+		);
+
+ALTER TABLE FAQ
+	ADD
+		CONSTRAINT FK_FAQ_category_TO_FAQ
+		FOREIGN KEY (
+			category_id
+		)
+		REFERENCES FAQ_category (
+			category_id
+		);
+
+ALTER TABLE FAQ
+	ADD
+		CONSTRAINT FK_MEMBER_TO_FAQ
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE Inquiry_answer
+	ADD
+		CONSTRAINT FK_Inquiry_TO_Inquiry_answer
+		FOREIGN KEY (
+			admin_id
+		)
+		REFERENCES Inquiry (
+			inquiry_id
+		);
+
+ALTER TABLE Inquiry_answer
+	ADD
+		CONSTRAINT FK_MEMBER_TO_Inquiry_answer
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE Inquiry
+	ADD
+		CONSTRAINT FK_MEMBER_TO_Inquiry
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE SCHEDULE
+	ADD
+		CONSTRAINT FK_SCHEDULE_DES_TO_SCHEDULE
+		FOREIGN KEY (
+			schedule_des_id
+		)
+		REFERENCES SCHEDULE_DES (
+			schedule_des_id
+		);
+
+ALTER TABLE SCHEDULE
+	ADD
+		CONSTRAINT FK_Screen_TO_SCHEDULE
+		FOREIGN KEY (
+			screen_id
+		)
+		REFERENCES Screen (
+			screen_id
+		);
+
+ALTER TABLE SCHEDULE
+	ADD
+		CONSTRAINT FK_MOVIE_TO_SCHEDULE
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE SEAT
+	ADD
+		CONSTRAINT FK_SEAT_TYPE_TO_SEAT
+		FOREIGN KEY (
+			seat_type_id
+		)
+		REFERENCES SEAT_TYPE (
+			seat_type_id
+		);
+
+ALTER TABLE SEAT
+	ADD
+		CONSTRAINT FK_Screen_TO_SEAT
+		FOREIGN KEY (
+			screen_id
+		)
+		REFERENCES Screen (
+			screen_id
+		);
+
+ALTER TABLE MOVIE_RESERV
+	ADD
+		CONSTRAINT FK_SCHEDULE_TO_MOVIE_RESERV
+		FOREIGN KEY (
+			schedule_id
+		)
+		REFERENCES SCHEDULE (
+			schedule_id
+		);
+
+ALTER TABLE MOVIE_RESERV
+	ADD
+		CONSTRAINT FK_SEAT_TO_MOVIE_RESERV
+		FOREIGN KEY (
+			seat_id
+		)
+		REFERENCES SEAT (
+			seat_id
+		);
+
+ALTER TABLE MOVIE_CAST_REL
+	ADD
+		CONSTRAINT FK_MOVIE_TO_MOVIE_CAST_REL
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE MOVIE_CAST_REL
+	ADD
+		CONSTRAINT FK_Cast_TO_MOVIE_CAST_REL
+		FOREIGN KEY (
+			CAST_ID
+		)
+		REFERENCES Cast (
+			CAST_ID
+		);
+
+ALTER TABLE TABLE3
+	ADD
+		CONSTRAINT FK_MOVIE_REVIEW_TO_TABLE3
+		FOREIGN KEY (
+			 REVIEW_ID
+		)
+		REFERENCES MOVIE_REVIEW (
+			 REVIEW_ID
+		);
+
+ALTER TABLE TABLE3
+	ADD
+		CONSTRAINT FK_VIEWPOINT_TBL_TO_TABLE3
+		FOREIGN KEY (
+			VIEWPOINT_ID
+		)
+		REFERENCES VIEWPOINT_TBL (
+			VIEWPOINT_ID
+		);
+
+ALTER TABLE MOVIE_REVIEW
+	ADD
+		CONSTRAINT FK_MOVIE_TO_MOVIE_REVIEW
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE MOVIE_REVIEW
+	ADD
+		CONSTRAINT FK_MEMBER_TO_MOVIE_REVIEW
+		FOREIGN KEY (
+			MEM_ID
+		)
+		REFERENCES MEMBER (
+			MEM_ID
+		);
+
+ALTER TABLE MOVIE_STAT
+	ADD
+		CONSTRAINT FK_MOVIE_TO_MOVIE_STAT
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE MOVIE_CATEGORY_REL
+	ADD
+		CONSTRAINT FK_MV_CTGR_TO_MV_CTGR_RL
+		FOREIGN KEY (
+			CATEGORY_ID
+		)
+		REFERENCES MOVIE_CATEGORY (
+			CATEGORY_ID
+		);
+
+ALTER TABLE MOVIE_CATEGORY_REL
+	ADD
+		CONSTRAINT FK_MOVIE_TO_MOVIE_CATEGORY_REL
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE SCREEN_TYPE_TBL_REL
+	ADD
+		CONSTRAINT FK_MOVIE_TO_S_T_R
+		FOREIGN KEY (
+			MOVIE_ID
+		)
+		REFERENCES MOVIE (
+			MOVIE_ID
+		);
+
+ALTER TABLE SCREEN_TYPE_TBL_REL
+	ADD
+		CONSTRAINT FK_SCREEN_TYPE_TBL_TO_S_T_R
+		FOREIGN KEY (
+			SCREEN_TYPE_ID
+		)
+		REFERENCES SCREEN_TYPE_TBL (
+			SCREEN_TYPE_ID
+		);
