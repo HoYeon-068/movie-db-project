@@ -1,0 +1,96 @@
+-- 1. 비회원 ID 자동 생성 로직
+-- 기존 객체 정리 (이전에 시퀀스가 남아있을 경우를 대비)
+DROP SEQUENCE RESV_ID_SQ;
+
+-- RESV_ID에 값을 부여하기 위한 시퀀스 생성
+-- (NON_MEMBER 테이블의 최대값 10 다음인 11부터 시작)
+CREATE SEQUENCE RESV_ID_SQ
+START WITH 11
+INCREMENT BY 1
+NOCACHE;
+
+-- 비회원 ID 자동 생성 트리거 생성
+CREATE OR REPLACE TRIGGER TRG_NON_MEMBER_ID_GEN
+BEFORE INSERT ON NON_MEMBER
+FOR EACH ROW
+WHEN (NEW.RESV_ID IS NULL) 
+BEGIN
+    -- RESV_ID가 비어있을 때만 시퀀스 값 자동 할당
+    SELECT RESV_ID_SQ.NEXTVAL INTO :NEW.RESV_ID FROM DUAL;
+    
+EXCEPTION
+    -- 예외 발생 시 무시 (NULL 처리)
+    WHEN OTHERS THEN
+        NULL;
+END;
+
+--
+
+-- 2. 인증 코드 만료 자동화 로직
+CREATE OR REPLACE TRIGGER TRG_AUTH_CODE_EXPIRE_ON_VERIFY
+BEFORE UPDATE OF VERIFIED ON MEMBER_AUTH
+FOR EACH ROW
+WHEN (NEW.VERIFIED = 'Y' AND OLD.VERIFIED != 'Y')
+BEGIN
+
+    :NEW.EXPIRED_AT := SYSDATE;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL;
+END;
+
+
+
+
+
+-- 1. 비회원 ID 자동 생성 로직 [ 시연 ]
+-- RESV_ID 컬럼을 제외하고 삽입(비회원)
+INSERT INTO NON_MEMBER (NM_PW, NM_NM, NM_BIRTH, NM_PHONE)
+VALUES ('TESTPW', '최종_자동채번', '030707', '010-9999-0000');
+
+COMMIT;
+
+SELECT RESV_ID, NM_NM
+FROM NON_MEMBER
+WHERE NM_NM = '최종_자동채번';
+
+
+-- 2. 인증 코드 만료 자동화 로직 [시연]
+-- 1. AUTH_ID=1 초기 상태 확인 (VERIFIED='N', EXPIRED_AT='25/01/10')
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 1;
+
+-- 2. 트리거 작동 유발: 인증 성공 (N → Y) 시 EXPIRED_AT 갱신 확인
+UPDATE MEMBER_AUTH
+SET VERIFIED = 'Y' --인증 성공으로 변경
+WHERE AUTH_ID = 1;
+
+COMMIT;
+
+-- 3. 변경된 값 확인: EXPIRED_AT이 현재 시각으로 바뀌었는지 확인
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 1;
+
+-- ----------------------------------------------------
+-- 4. 트리거 미작동 확인: 이미 'Y'인 상태를 다시 'Y'로 업데이트
+--    AUTH_ID=2의 EXPIRED_AT 값 확인 (25/01/11)
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 2;
+
+-- 5. 업데이트 시도 (Y → Y)
+UPDATE MEMBER_AUTH
+SET VERIFIED = 'Y'
+WHERE AUTH_ID = 2;
+
+COMMIT;
+
+-- 6. 변경 후 EXPIRED_AT 확인: 날짜가 그대로 유지됨 = 트리거 작동 X
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 2;
+
+
