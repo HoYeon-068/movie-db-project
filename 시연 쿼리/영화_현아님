@@ -1,0 +1,110 @@
+----------------------------------------------------영화검색
+CREATE OR REPLACE PROCEDURE UP_SEARCH_MOVIE_TITLE (
+    psearchMovieWord IN VARCHAR2
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                      AS title,
+      m.rating_grade                     AS grade,
+      s.reservation_rate,
+      m.open_dt,
+      m.heart,
+      rv.avg_score,
+      m.summary
+    FROM movie m
+    LEFT JOIN movie_stat s
+      ON s.movie_id = m.movie_id
+    LEFT JOIN (
+      SELECT
+        mr.movie_id,
+        ROUND(AVG(mr.score), 1) AS avg_score
+      FROM movie_review mr
+      GROUP BY mr.movie_id
+    ) rv
+      ON rv.movie_id = m.movie_id
+    WHERE REGEXP_LIKE(m.movie_title, psearchMovieWord, 'i')
+    ORDER BY s.reservation_rate DESC NULLS LAST,
+             m.open_dt DESC,
+             m.movie_title
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || r.grade
+      || ' | 예매율='   || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 개봉일='   || TO_CHAR(r.open_dt, 'YYYY-MM-DD')
+      || ' | 하트수='        || r.heart
+      || ' | 평균평점=' || NVL(TO_CHAR(r.avg_score), '-')
+      || ' | 줄거리='   || SUBSTR(r.summary, 1, 60)
+    );
+  END LOOP;
+END;
+
+
+EXEC UP_SEARCH_MOVIE_TITLE('어'); 
+
+---------------------------------------------상세페이지 조회
+CREATE OR REPLACE PROCEDURE UP_SEARCH_MOVIE_detail (
+       psearchMovieId NUMBER
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                      AS title,
+      m.rating_grade                     AS grade,
+      s.reservation_rate,
+      m.heart,
+      rv.avg_score,
+      s.audience_count
+    FROM movie m
+    LEFT JOIN movie_stat s
+      ON s.movie_id = m.movie_id
+    LEFT JOIN (
+      SELECT
+        mr.movie_id,
+        ROUND(AVG(mr.score), 1) AS avg_score
+      FROM movie_review mr
+      GROUP BY mr.movie_id
+    ) rv
+      ON rv.movie_id = m.movie_id
+    WHERE m.movie_id = psearchMovieId
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || r.grade
+      || ' | 예매율='   || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 하트수='        || r.heart
+      || ' | 관람평점=' || NVL(TO_CHAR(r.avg_score), '-')
+      || ' | 누적관객수='        || r.audience_count
+    );
+  END LOOP;
+END;
+
+EXEC UP_SEARCH_MOVIE_detail(2); -- movie_id 로 받아와서 조회
+---------------------------------------------------------리뷰 작성
+CREATE OR REPLACE PROCEDURE pr_insert_review_with_point (
+    p_review_id   IN NUMBER,
+    p_movie_id    IN NUMBER,
+    p_mem_id      IN VARCHAR2,
+    p_score       IN NUMBER,
+    p_review_txt  IN VARCHAR2,
+    p_viewpoint_id IN NUMBER,
+    p_rel_id      IN NUMBER  -- review_viewpoint_rel_id (단일 PK를 쓰는 구조라면 필요)
+)
+IS
+BEGIN
+  INSERT INTO movie_review (
+      review_id, movie_id, mem_id, score, review_txt, reg_dt, mod_dt, review_like
+  ) VALUES (
+      p_review_id, p_movie_id, p_mem_id, p_score, p_review_txt, SYSDATE, SYSDATE, 0
+  );
+
+  INSERT INTO review_viewpoint_rel (
+      riview_viewpoint_rel_id, review_id, viewpoint_id   ) VALUES (
+      p_rel_id, p_review_id, p_viewpoint_id
+  );
+
+  COMMIT;
+END;
