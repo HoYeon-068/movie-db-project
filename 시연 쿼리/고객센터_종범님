@@ -1,5 +1,51 @@
-입력한 해당 페이지 공지사항 10개 가져오는 프로시저
+--분실물 조회 프로시저
 
+CREATE OR REPLACE PROCEDURE GET_LOST_ITEM_SEARCH (
+    p_theater_name IN VARCHAR2,
+    p_keyword IN VARCHAR2,
+    p_start_date IN DATE,
+    p_end_date IN DATE,
+    p_result OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_result FOR
+        SELECT l.lost_id,
+               l.mem_id,
+               l.reporter_name,
+               t.theater_id,
+               t.theater_name,
+               l.title,
+               l.content,
+               l.status,
+               l.created_at,
+               l.updated_at
+        FROM lost_item l
+        JOIN theater t ON l.theater_id = t.theater_id
+        WHERE (p_theater_name IS NULL OR t.theater_name LIKE '%' || p_theater_name || '%')
+          AND (p_keyword IS NULL OR l.title LIKE '%' || p_keyword || '%')
+          AND (p_start_date IS NULL OR l.created_at >= p_start_date)
+          AND (p_end_date IS NULL OR l.created_at <= p_end_date)
+        ORDER BY l.created_at DESC;
+END;
+/
+
+
+--시연 쿼리
+
+-- 분실물 전체 조회
+EXEC GET_LOST_ITEM_SEARCH(NULL, NULL, NULL, NULL, :rc);
+PRINT rc;
+--극장명,분실물로 조회
+VARIABLE rc REFCURSOR;
+EXEC GET_LOST_ITEM_SEARCH('홍대', '핸드폰', NULL, NULL, :rc);
+PRINT rc;
+
+
+
+
+
+-- 페이지 번호 입력받아 해당 페이지 공지사항 10개 가져오기 --
 CREATE OR REPLACE PROCEDURE GET_NOTICE_PAGE (
     p_page IN NUMBER,                
     p_result OUT SYS_REFCURSOR      
@@ -27,84 +73,7 @@ BEGIN
 END;
 /
 
-
-분실물 문의 검색 프로시저
-
-CREATE OR REPLACE PROCEDURE GET_LOST_ITEM_SEARCH (
-    p_theater_name IN VARCHAR2,  
-    p_keyword IN VARCHAR2,        
-    p_start_date IN DATE,        
-    p_end_date IN DATE,           
-    p_result OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-    OPEN p_result FOR
-        SELECT l.lost_id,
-               t.theater_name,
-               l.title,
-               l.content,
-               l.created_at,
-               l.status
-        FROM lost_item l
-        JOIN theater t ON l.theater_id = t.theater_id
-        WHERE (p_theater_name IS NULL OR t.theater_name = p_theater_name)
-          AND (p_keyword IS NULL OR l.title LIKE '%' || p_keyword || '%')
-          AND (p_start_date IS NULL OR l.created_at >= p_start_date)
-          AND (p_end_date IS NULL OR l.created_at <= p_end_date)
-        ORDER BY l.created_at DESC;
-END;
-/
-
-
-
--- 답변 ID 자동 증가용 시퀀스 생성 (새 답변이 등록될 때마다 고유 ID 자동 부여)
-CREATE SEQUENCE cinema_user.inquiry_answer_seq
-START WITH 1
-INCREMENT BY 1
-NOCACHE 
-NOCYCLE;
-
--- 테스트용 관리자 계정 추가 (답변을 달 수 있는 관리자)
-INSERT INTO member (mem_id, mem_pw, mem_nm, mem_role)
-VALUES ('admin001', 'pw123', '관리자', 'A'); 
-
--- 1:1 문의에 답변 등록 + 문의 상태 자동 변경 프로시저
-CREATE OR REPLACE PROCEDURE ADD_INQUIRY_ANSWER (
-    p_inquiry_id      IN NUMBER,      -- 답변할 문의 ID
-    p_admin_memid     IN VARCHAR2,    -- 답변 관리자 ID
-    p_answer_content  IN CLOB          -- 답변 내용
-)
-IS
-BEGIN
-    -- 답변 테이블에 새 답변 추가 (시퀀스로 ID 자동 생성, 작성 시간 기록)
-    INSERT INTO inquiry_answer (
-        answer_id,
-        mem_id,
-        inquiry_id,
-        answer_content,
-        answered_at
-    )
-    VALUES (
-        inquiry_answer_seq.NEXTVAL,
-        p_admin_memid,
-        p_inquiry_id,
-        p_answer_content,
-        SYSDATE
-    );
-
-    -- 문의 테이블의 상태를 '답변완료'로 업데이트
-    UPDATE inquiry
-    SET inquiry_status = '답변완료'
-    WHERE inquiry_id = p_inquiry_id;
-END;
-/
-
--- 테스트 답변 등록
-EXEC ADD_INQUIRY_ANSWER(3, 'admin001', '테스트용 답변');
-
--- 등록된 답변 내용 확인
-SELECT * FROM inquiry_answer WHERE inquiry_id = 3;
-
--- 문의 상태가 확인
-SELECT inquiry_id, inquiry_status FROM inquiry WHERE inquiry_id = 3;
+-- 시연 쿼리 --
+VAR rc REFCURSOR;
+EXEC GET_NOTICE_PAGE(1, :rc);
+PRINT rc;
