@@ -1,0 +1,90 @@
+SET SERVEROUTPUT ON;
+
+CREATE OR REPLACE TRIGGER TRG_SNS_DUPLICATE_CHECK
+BEFORE INSERT OR UPDATE ON SNS_MEMBER
+FOR EACH ROW
+DECLARE
+    v_count NUMBER := 0;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- TRG_SNS_DUPLICATE_CHECK 작동 시작 ---');
+    DBMS_OUTPUT.PUT_LINE('신규/변경 MEM_ID: ' || :NEW.MEM_ID || 
+                         ', SNS_TYPE: ' || :NEW.SNS_TYPE || 
+                         ', KEY: ' || :NEW.SNS_UNIQUE_KEY);
+    
+    -- 중복 계정 확인 로직
+    SELECT COUNT(*) INTO v_count
+    FROM SNS_MEMBER
+    WHERE SNS_TYPE = :NEW.SNS_TYPE
+      AND SNS_UNIQUE_KEY = :NEW.SNS_UNIQUE_KEY
+      AND MEM_ID != :NEW.MEM_ID; 
+
+    IF v_count > 0 THEN
+        -- 중복 발견 시 DBMS 출력 및 사용자 정의 에러 발생
+        DBMS_OUTPUT.PUT_LINE('오류 감지: 중복 연동 (기존 사용자 수: ' || v_count || ')');
+        RAISE_APPLICATION_ERROR(-20005, '해당 SNS 계정은 이미 다른 회원에게 연동되어 있습니다.');
+    ELSE
+        -- 중복 없음 로깅 (이 시나리오에서는 실행되지 않음)
+        DBMS_OUTPUT.PUT_LINE(' 검증 완료: 중복되는 연동 기록 없음.');
+    END IF;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(' 예상치 못한 오류 발생: ' || SQLERRM);
+        RAISE; 
+END;
+
+
+CREATE OR REPLACE TRIGGER TRG_AUTH_CODE_EXPIRE_ON_VERIFY
+BEFORE UPDATE OF VERIFIED ON MEMBER_AUTH
+FOR EACH ROW
+WHEN (NEW.VERIFIED = 'Y' AND OLD.VERIFIED != 'Y')
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- TRG_AUTH_CODE_EXPIRE_ON_VERIFY 작동 시작 ---');
+    DBMS_OUTPUT.PUT_LINE('AUTH_ID: ' || :OLD.AUTH_ID || '의 VERIFIED 상태 변경 감지: ' || :OLD.VERIFIED || ' -> ' || :NEW.VERIFIED);
+    
+    DBMS_OUTPUT.PUT_LINE('   * EXPIRED_AT (변경 전): ' || TO_CHAR(:OLD.EXPIRED_AT, 'YYYY-MM-DD'));
+    
+    :NEW.EXPIRED_AT := SYSDATE;
+    
+    DBMS_OUTPUT.PUT_LINE('✅ EXPIRED_AT이 현재 시각으로 갱신되었습니다.');
+    DBMS_OUTPUT.PUT_LINE('   * EXPIRED_AT (변경 후): ' || TO_CHAR(:NEW.EXPIRED_AT, 'YYYY-MM-DD'));
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('🔥 AUTH_ID ' || :OLD.AUTH_ID || ' 처리 중 오류 발생: ' || SQLERRM);
+        NULL;
+END;
+
+
+-- 정상 연동 시도 (DBMS_OUTPUT 확인용)
+INSERT INTO SNS_MEMBER (MEM_ID, SNS_TYPE, SNS_UNIQUE_KEY)
+VALUES ('user99', 'NAVER', '99999'); 
+
+COMMIT; ROLLBACK;
+
+-- user11이 user01의 계정(NAVER, 10001)과 동일한 계정으로 연동 시도
+INSERT INTO SNS_MEMBER (MEM_ID, SNS_TYPE, SNS_UNIQUE_KEY)
+VALUES ('user11', 'NAVER', '10001');
+
+
+
+-- DBMS 출력 기능 켜기
+SET SERVEROUTPUT ON;
+
+-- 1. 업데이트 전 상태 확인
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 1;
+
+-- 2. 트리거 작동 유발: 인증 성공 (N → Y) 시도
+UPDATE MEMBER_AUTH
+SET VERIFIED = 'Y'
+WHERE AUTH_ID = 1;
+
+COMMIT;
+
+-- 3. 업데이트 후 상태 확인 (EXPIRED_AT이 현재 시각으로 갱신되어야 함.)
+SELECT AUTH_ID, VERIFIED, EXPIRED_AT
+FROM MEMBER_AUTH
+WHERE AUTH_ID = 1;
+
