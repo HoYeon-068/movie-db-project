@@ -1,0 +1,64 @@
+-- 이벤트 상세정보 조회
+SET SERVEROUTPUT ON;
+
+DECLARE
+    CURSOR cur_event IS
+        SELECT 
+            e.event_id,
+            e.event_name,
+            e.event_type,
+            e.event_status,
+            TO_CHAR(e.start_date, 'YYYY-MM-DD') AS start_date,
+            TO_CHAR(e.end_date, 'YYYY-MM-DD') AS end_date,
+            e.partner_name,
+            p.partner_type
+        FROM event e
+        LEFT JOIN partner p ON e.partner_name = p.partner_name
+        ORDER BY e.start_date ASC;
+BEGIN
+    FOR rec IN cur_event LOOP
+        DBMS_OUTPUT.PUT_LINE('[' || rec.event_id || '] ' || rec.event_name || 
+                             ' | 유형: ' || rec.event_type ||
+                             ' | 상태: ' || rec.event_status ||
+                             ' | 기간: ' || rec.start_date || ' ~ ' || rec.end_date ||
+                             ' | 제휴사: ' || rec.partner_name || '(' || rec.partner_type || ')');
+    END LOOP;
+END;
+
+
+SELECT * FROM EVENT;
+
+
+-- 제휴사별 상세 정보 조회
+
+DECLARE
+ 
+    CURSOR c_partner_info IS
+        SELECT 
+            e.partner_name,
+            p.partner_tel,
+            p.partner_manager,
+            COUNT(*) AS event_count
+        FROM event e
+        JOIN partner p ON e.partner_name = p.partner_name
+        GROUP BY e.partner_name, p.partner_tel, p.partner_manager
+        ORDER BY event_count DESC;
+
+    v_partner_row c_partner_info%ROWTYPE;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('===== 제휴사 상세 정보 =====');
+    
+    OPEN c_partner_info;
+    LOOP
+        FETCH c_partner_info INTO v_partner_row;
+        EXIT WHEN c_partner_info%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE(
+            '제휴사: ' || v_partner_row.partner_name || 
+            ' (' || v_partner_row.partner_tel || ') ' ||
+            '담당자: ' || v_partner_row.partner_manager || 
+            ' / 진행 이벤트 수: ' || v_partner_row.event_count
+        );
+    END LOOP;
+    CLOSE c_partner_info;
+END;
