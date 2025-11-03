@@ -1,0 +1,90 @@
+-- STORE_PRODUCT
+
+-- 1.
+BEGIN
+  EXECUTE IMMEDIATE 'CREATE SEQUENCE SEQ_STORE_PRODUCT START WITH 11 INCREMENT BY 1 NOCACHE';
+  DBMS_OUTPUT.PUT_LINE('✅ 시퀀스 생성 완료');
+END;
+
+2.
+BEGIN
+  INSERT ALL
+    INTO STORE_PRODUCT (PRODUCT_ID, CATEGORY_ID, PRODUCT_CODE, TITLE, SUB_TITLE, DESCRIPTION_HTML, ISSUE_TYPE, SELL_TYPE, MAX_PURCHASE_QTY, EVENT_ONLY_YN, THUMB_URL, REG_DT, USE_YN)
+      VALUES (1, 1, 'P001', '팝콘 콤보', '치즈맛', '<p>치즈맛 팝콘 + 콜라</p>', 'NORMAL', 'ONLINE', 5, 'N', 'https://img.example.com/p001.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (2, 1, 'P002', '음료 세트', '콜라+사이다', '<p>콜라 1개 + 사이다 1개</p>', 'NORMAL', 'ONLINE', 5, 'N', 'https://img.example.com/p002.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (3, 2, 'P003', '팝콘 단품', '카라멜맛', '<p>달콤한 카라멜 팝콘</p>', 'NORMAL', 'OFFLINE', 10, 'N', 'https://img.example.com/p003.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (4, 2, 'P004', '아이스크림', '바닐라맛', '<p>바닐라 아이스크림 1개</p>', 'NORMAL', 'ONLINE', 3, 'N', 'https://img.example.com/p004.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (5, 1, 'P005', '치킨너겟', '10조각', '<p>10조각 치킨너겟</p>', 'NORMAL', 'ONLINE', 5, 'N', 'https://img.example.com/p005.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (6, 3, 'P006', '기프트카드', '1만원권', '<p>영화관 기프트카드 1만원권</p>', 'GIFT', 'ONLINE', 1, 'N', 'https://img.example.com/p006.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (7, 3, 'P007', '기프트카드', '3만원권', '<p>영화관 기프트카드 3만원권</p>', 'GIFT', 'ONLINE', 1, 'N', 'https://img.example.com/p007.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (8, 1, 'P008', '핫도그', '소시지', '<p>소시지 핫도그</p>', 'NORMAL', 'OFFLINE', 5, 'N', 'https://img.example.com/p008.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (9, 1, 'P009', '나쵸 세트', '치즈', '<p>치즈 나쵸 세트</p>', 'NORMAL', 'ONLINE', 5, 'N', 'https://img.example.com/p009.jpg', SYSDATE, 'Y')
+    INTO STORE_PRODUCT VALUES (10, 2, 'P010', '아이스 아메리카노', 'ICE', '<p>시원한 아이스 아메리카노</p>', 'NORMAL', 'ONLINE', 5, 'N', 'https://img.example.com/p010.jpg', SYSDATE, 'Y')
+  SELECT * FROM dual;
+
+  COMMIT;
+  DBMS_OUTPUT.PUT_LINE('✅ 더미데이터 10건 삽입 완료');
+END;
+
+
+3. 결과확인
+BEGIN
+  DBMS_OUTPUT.PUT_LINE('=== STORE_PRODUCT 데이터 목록 ===');
+  FOR rec IN (SELECT PRODUCT_ID, PRODUCT_CODE, TITLE, CATEGORY_ID FROM STORE_PRODUCT ORDER BY PRODUCT_ID) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+      'ID='||rec.PRODUCT_ID||' | CODE='||rec.PRODUCT_CODE||' | TITLE='||rec.TITLE||' | CATEGORY_ID='||rec.CATEGORY_ID
+    );
+  END LOOP;
+END;
+
+
+--  STORE ORDER
+
+1. 
+BEGIN
+  EXECUTE IMMEDIATE 'CREATE SEQUENCE SEQ_STORE_ORDER START WITH 11 INCREMENT BY 1 NOCACHE';
+  DBMS_OUTPUT.PUT_LINE('✅ SEQ_STORE_ORDER 생성 완료 (START WITH 11)');
+
+2,. 
+BEGIN
+  INSERT ALL
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (1, 'user01', TO_DATE('2025-10-01 10:00','YYYY-MM-DD HH24:MI'), 'CARD', 25000, 0, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (2, 'user02', TO_DATE('2025-10-01 11:00','YYYY-MM-DD HH24:MI'), 'POINT', 0, 5000, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (3, 'user03', TO_DATE('2025-10-02 09:30','YYYY-MM-DD HH24:MI'), 'CARD', 15000, 0, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (4, 'user04', TO_DATE('2025-10-02 14:00','YYYY-MM-DD HH24:MI'), 'CASH', 30000, 0, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (5, 'user05', TO_DATE('2025-10-03 10:30','YYYY-MM-DD HH24:MI'), 'CARD', 22000, 0, '취소', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (6, 'user01', TO_DATE('2025-10-03 12:00','YYYY-MM-DD HH24:MI'), 'POINT', 0, 2000, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (7, 'user02', TO_DATE('2025-10-04 09:00','YYYY-MM-DD HH24:MI'), 'CARD', 18000, 0, '대기', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (8, 'user03', TO_DATE('2025-10-04 15:30','YYYY-MM-DD HH24:MI'), 'CARD', 25000, 0, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (9, 'user04', TO_DATE('2025-10-05 10:00','YYYY-MM-DD HH24:MI'), 'CASH', 30000, 0, '완료', SYSDATE)
+  INTO STORE_ORDER (order_id, mem_id, order_dt, pay_method, total_amount, used_point, status, reg_dt)
+    VALUES (10, 'user05', TO_DATE('2025-10-05 11:30','YYYY-MM-DD HH24:MI'), 'CARD', 27000, 0, '완료', SYSDATE)
+  SELECT * FROM dual;
+END;
+
+3. 결과 확인
+
+BEGIN
+  DBMS_OUTPUT.PUT_LINE('=== STORE_ORDER 데이터 ===');
+  FOR r IN (
+    SELECT ORDER_ID, MEM_ID, ORDER_DT, PAY_METHOD, TOTAL_AMOUNT, USED_POINT, STATUS
+    FROM STORE_ORDER
+    ORDER BY ORDER_ID
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+      'ID='||r.ORDER_ID||' | MEM='||r.MEM_ID||
+      ' | DT='||TO_CHAR(r.ORDER_DT,'YYYY-MM-DD HH24:MI')||
+      ' | PAY='||r.PAY_METHOD||' | AMT='||r.TOTAL_AMOUNT||
+      ' | PNT='||r.USED_POINT||' | ST='||r.STATUS
+    );
+  END LOOP;
+END;
