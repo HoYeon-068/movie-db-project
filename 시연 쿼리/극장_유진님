@@ -1,0 +1,243 @@
+-- 전체 쿼리
+-- 지역 입력 -> 극장 출력 + 이벤트 + 공지사항
+CREATE OR REPLACE PROCEDURE regionPage 
+(
+    pregion_name IN region.region_name%TYPE
+)
+IS
+    vregion_name region.region_name%TYPE;
+BEGIN
+    SELECT region_name 
+            INTO vregion_name
+    FROM region
+    WHERE region_name=pregion_name;
+--
+    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
+    DBMS_OUTPUT.PUT_LINE(' ');
+    FOR r IN (
+        SELECT r.region_name 지역명, theater_name 극장
+        FROM region r JOIN theater t ON r.region_id = t.region_id
+        WHERE r.region_name = pregion_name        
+        ORDER BY t.theater_name
+    )
+    LOOP       
+    DBMS_OUTPUT.PUT_LINE('[' || r.지역명 || '] - ' || r.극장);
+    END LOOP;
+    
+    -- 이벤트 2개
+    DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE('* 이벤트(2)');
+    FOR e IN (
+        SELECT partner_name 제휴사, event_name 이벤트명
+        FROM (
+            SELECT partner_name, event_name
+            FROM event
+        )
+        WHERE ROWNUM <=2
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE('- ' || e.제휴사 || ' : ' || e.이벤트명);
+    END LOOP;
+ 
+ -- 공지사항 최신 5개   
+    DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE('* 공지사항(5)');
+    FOR n IN (
+        SELECT title 제목
+        FROM (
+            SELECT title
+            FROM notice
+            ORDER BY created_at DESC
+        )
+        WHERE ROWNUM <=5
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE('- ' || n.제목);
+    END LOOP;
+    
+EXCEPTION
+    WHEN no_data_found THEN
+        RAISE_APPLICATION_ERROR(-20001, '> 해당 지역 없음.');
+END;
+
+EXEC regionPage('서울');
+
+
+
+-- 상영시간표
+CREATE OR REPLACE PROCEDURE showTimePage 
+(
+    pregion_name IN region.region_name%TYPE,
+    ptheater_name IN theater.theater_name%TYPE
+)
+IS
+    vregion_name region.region_name%TYPE;
+    vtheater_name theater.theater_name%TYPE;
+BEGIN
+    SELECT region_name, theater_name 
+            INTO vregion_name, vtheater_name
+    FROM region, theater
+    WHERE region_name=pregion_name 
+            AND theater_name = ptheater_name ;
+            
+    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
+    FOR r IN (
+        SELECT r.region_name 지역명, theater_name 극장
+        FROM region r JOIN theater t ON r.region_id = t.region_id
+        WHERE r.region_name = pregion_name 
+            AND (ptheater_name IS NULL OR t.theater_name = ptheater_name)
+        ORDER BY t.theater_name
+    )
+    LOOP   
+    DBMS_OUTPUT.PUT_LINE(r.지역명 || ' - ' || r.극장);
+    END LOOP;
+    
+    -- 시간표
+    DBMS_OUTPUT.PUT_LINE('  ');
+    DBMS_OUTPUT.PUT_LINE('== 상영시간표 ==');
+    FOR sch IN (
+        SELECT theater_name 극장, movie_title 영화, TO_CHAR(s.start_date,'YYYY-MM-DD HH24:MI') 상영시간, tot_seat "총 좌석수"
+        FROM movie m JOIN schedule s ON m.movie_id = s.movie_id
+                JOIN ticketPrice p ON s.schedule_id = p.schedule_id
+                JOIN theater t ON t.theater_id = p.theater_id 
+                JOIN screen scr ON scr.screen_id = p.screen_id
+        WHERE t.theater_name = ptheater_name
+        ORDER BY movie_title, start_date
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE('[' ||sch.영화 || '] - 상영시간 :  ' || sch.상영시간 || ' - ' || '총 좌석수 : ' || sch."총 좌석수");
+    END LOOP;
+EXCEPTION
+    WHEN no_data_found THEN
+        RAISE_APPLICATION_ERROR(-20001, '> 잘못된 검색.');
+END;
+EXEC showTimePage('서울', '강남 CGV');
+
+-- 극장정보 출력  + 극장 공지사항 5 개 + 스토어 상품 2개
+CREATE OR REPLACE PROCEDURE regionTheaterPage 
+(
+    pregion_name IN region.region_name%TYPE,
+    ptheater_name IN theater.theater_name%TYPE 
+)
+IS
+    vregion_name region.region_name%TYPE;
+    vtheater_name theater.theater_name%TYPE;
+BEGIN
+    SELECT region_name, theater_name 
+            INTO vregion_name, vtheater_name
+    FROM region, theater
+    WHERE region_name=pregion_name 
+            AND theater_name = ptheater_name ;
+            
+    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
+    FOR r IN (
+        SELECT r.region_name 지역명, theater_name 극장
+        FROM region r JOIN theater t ON r.region_id = t.region_id
+        WHERE r.region_name = pregion_name 
+            AND (ptheater_name IS NULL OR t.theater_name = ptheater_name)
+        ORDER BY t.theater_name
+    )
+    LOOP   
+    DBMS_OUTPUT.PUT_LINE(r.지역명 || ' - ' || r.극장);
+    END LOOP;
+    
+ -- 극장 정보
+    FOR i IN (
+        SELECT t.theater_name 극장, i.facilities 보유시설, i.floor_guide 층별안내, i.transit 대중교통, i.parking 주차
+        FROM theaterInfo i JOIN theater t ON t.theater_id = i.theater_id
+        WHERE t.theater_name = ptheater_name
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE(' ' );
+    DBMS_OUTPUT.PUT_LINE('보유시설 - ' || i.보유시설 );
+    DBMS_OUTPUT.PUT_LINE('층별안내 - ' || i.층별안내 );
+    DBMS_OUTPUT.PUT_LINE('대중교통 - ' || i.대중교통 );
+    DBMS_OUTPUT.PUT_LINE('주차 - ' || i.주차 );
+    END LOOP;
+    
+ -- 공지사항 최신 5개   
+    DBMS_OUTPUT.PUT_LINE(' ' );
+    DBMS_OUTPUT.PUT_LINE('공지사항(5)');
+    FOR n IN (
+        SELECT title 제목
+        FROM (
+            SELECT title
+            FROM notice
+            ORDER BY created_at DESC
+        )
+        WHERE ROWNUM <=5
+    )
+    LOOP    
+    DBMS_OUTPUT.PUT_LINE(n.제목);
+    END LOOP;
+   
+   -- 스토어 상품(2)
+    DBMS_OUTPUT.PUT_LINE(' ' );
+    DBMS_OUTPUT.PUT_LINE('스토어 상품(2)');
+    FOR s IN (
+        SELECT title 상품명, sub_title 설명, list_price 가격, sale_price 할인가
+        FROM store_product st_p JOIN store_price_policy spp ON st_p.product_id = spp.product_id
+        WHERE ROWNUM <=2
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE( '~ '||s.상품명 || ' - ' || s.설명 );
+    DBMS_OUTPUT.PUT_LINE( ' : '||s.가격 || ' -- > ' || s.할인가 );
+    DBMS_OUTPUT.PUT_LINE( ' ');
+    END LOOP;
+    
+EXCEPTION
+    WHEN no_data_found THEN
+        RAISE_APPLICATION_ERROR(-20001, '> 잘못된 검색.');
+END;
+
+EXEC regionTheaterPage('서울', '강남 CGV');
+
+
+
+-- 극장 관람료 + 상영관 출력
+CREATE OR REPLACE PROCEDURE ticketPricePage 
+(
+    pregion_name IN region.region_name%TYPE,
+    ptheater_name IN theater.theater_name%TYPE 
+)
+IS
+    vregion_name region.region_name%TYPE;
+    vtheater_name theater.theater_name%TYPE;
+BEGIN
+    SELECT region_name, theater_name 
+            INTO vregion_name, vtheater_name
+    FROM region, theater
+    WHERE region_name=pregion_name 
+            AND theater_name = ptheater_name ;
+            
+    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
+    FOR r IN (
+        SELECT r.region_name 지역명, theater_name 극장
+        FROM region r JOIN theater t ON r.region_id = t.region_id
+        WHERE r.region_name = pregion_name 
+            AND  t.theater_name = ptheater_name
+        ORDER BY t.theater_name
+    )
+    LOOP   
+    DBMS_OUTPUT.PUT_LINE(r.지역명 || ' - ' || r.극장);
+    END LOOP;
+    
+    -- 관람료
+    DBMS_OUTPUT.PUT_LINE('  ');
+    DBMS_OUTPUT.PUT_LINE('== 관람료 ==');
+    FOR p IN (
+        SELECT st.screenType_name 상영관, p.day_of_week 요일, p.adult_or_teen "성인/청소년", p.ticket_price 요금
+        FROM ticketPrice p JOIN theater t ON t.theater_id = p.theater_id
+                JOIN screen s ON p.screen_id = s.screen_id
+                JOIN screen_type st ON s.screenType_id = st.screenType_id
+        ORDER BY st.screenType_name, p.day_of_week, p. adult_or_teen
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE(p. 상영관 || ' - ' || p.요일 || ' - ' || p."성인/청소년" || ' - ' || p.요금);
+    END LOOP;
+EXCEPTION
+    WHEN no_data_found THEN
+        RAISE_APPLICATION_ERROR(-20001, '> 잘못된 검색.');
+END;
+
+EXEC ticketPricePage('서울', '강남 CGV');
