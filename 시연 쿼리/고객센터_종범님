@@ -1,0 +1,94 @@
+입력한 해당 페이지 공지사항 10개 가져오는 프로시저
+
+CREATE OR REPLACE PROCEDURE GET_NOTICE_PAGE (
+    p_page IN NUMBER,                
+    p_result OUT SYS_REFCURSOR      
+)
+IS
+BEGIN
+    OPEN p_result FOR
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS rnum,
+                   n.NOTICE_ID,
+                   t.THEATER_ID,
+                   n.category,          
+                   n.TITLE,         
+                   n.created_at          
+            FROM (
+                SELECT NOTICE_ID, THEATER_ID, category, TITLE, created_at
+                FROM NOTICE
+                ORDER BY created_at DESC
+            ) n
+            JOIN THEATER t ON n.THEATER_ID = t.THEATER_ID
+            WHERE ROWNUM <= p_page * 10
+        )
+        WHERE rnum > (p_page - 1) * 10;
+END;
+/
+
+
+분실물 문의 검색 프로시저
+
+CREATE OR REPLACE PROCEDURE GET_LOST_ITEM_SEARCH (
+    p_theater_name IN VARCHAR2,  
+    p_keyword IN VARCHAR2,        
+    p_start_date IN DATE,        
+    p_end_date IN DATE,           
+    p_result OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_result FOR
+        SELECT l.lost_id,
+               t.theater_name,
+               l.title,
+               l.content,
+               l.created_at,
+               l.status
+        FROM lost_item l
+        JOIN theater t ON l.theater_id = t.theater_id
+        WHERE (p_theater_name IS NULL OR t.theater_name = p_theater_name)
+          AND (p_keyword IS NULL OR l.title LIKE '%' || p_keyword || '%')
+          AND (p_start_date IS NULL OR l.created_at >= p_start_date)
+          AND (p_end_date IS NULL OR l.created_at <= p_end_date)
+        ORDER BY l.created_at DESC;
+END;
+/
+
+
+
+1:1문의에 답변 등록되면 상태 자동변경
+
+CREATE OR REPLACE PROCEDURE ADD_INQUIRY_ANSWER (
+    p_inquiry_id      IN NUMBER,      
+    p_admin_memid    IN VARCHAR2,     
+    p_answer_content IN CLOB          
+)
+IS
+BEGIN
+    INSERT INTO cinema_user.inquiry_answer (
+        answer_id,
+        mem_id,
+        inquiry_id,
+        answer_content,
+        answered_at
+    )
+    VALUES (
+        inquiry_answer_seq.NEXTVAL,
+        p_admin_memid,
+        p_inquiry_id,
+        p_answer_content,
+        SYSDATE
+    );
+
+    UPDATE cinema_user.inquiry
+    SET inquiry_status = '답변완료'
+    WHERE inquiry_id = p_inquiry_id;
+
+    COMMIT;
+END;
+/
+
+
+
