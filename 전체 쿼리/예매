@@ -1,0 +1,178 @@
+--쿼리
+
+--영화 목록 조회
+
+DECLARE 
+   -- vrow movie%ROWTYPE;
+   CURSOR vdecursor IS (
+                     SELECT rating_grade, movie_title 
+                     FROM movie
+                     );
+BEGIN 
+-- OPEN vdecursor;
+    DBMS_OUTPUT.PUT_LINE('등급' || ' | ' || '영화명' );
+
+   FOR vrow IN vdecursor
+   LOOP
+     DBMS_OUTPUT.PUT_LINE(vrow.rating_grade  || ', ' || vrow.movie_title );
+   END LOOP;  
+--EXCEPTION
+END;
+
+
+
+--특정 지역의 영화관 목록 가져오기
+
+CREATE OR REPLACE PROCEDURE get_tlist (
+    p_name IN VARCHAR2
+)
+IS
+    CURSOR c_list IS
+        SELECT t.*, r.region_name
+        FROM Theater t 
+        LEFT JOIN Region r 
+           ON t.region_id = r.region_id
+        WHERE r.region_name = p_name;
+
+    v_row c_list%ROWTYPE;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('극장명' || ' / ' || '지역명');
+
+    OPEN c_list;
+    LOOP
+        FETCH c_list INTO v_row;
+        EXIT WHEN c_list%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE(v_row.theater_name || '   ' || v_row.region_name);
+    END LOOP;
+    CLOSE c_list;
+END;
+
+
+EXEC get_tlist('서울');
+
+
+
+
+
+--현재 예매 좌석 현황 
+CREATE OR REPLACE PROCEDURE get_reserv_seat (
+    p_id IN NUMBER
+)
+IS
+    CURSOR c_list IS
+        SELECT *
+        FROM MOVIE_RESERV r
+        LEFT JOIN SEAT s
+        ON r.seat_id = s.seat_id
+        WHERE r.SCHEDULE_ID = p_id
+        ORDER BY seat_row, seat_col;
+
+    v_row c_list%ROWTYPE;
+
+    TYPE t_matrix IS TABLE OF NUMBER INDEX BY VARCHAR2(4);  -- "A1", "B3" 등
+    v_mat t_matrix;
+    
+    v_title movie.movie_title%type;
+    v_date  schedule.start_date%type;
+    v_tname Theater.theater_name%type;
+    
+BEGIN
+
+    SELECT start_date,movie_title,theater_name
+    INTO v_date,v_title,v_tname
+    FROM SCHEDULE s
+    LEFT JOIN movie m
+    ON s.movie_id=m.movie_id
+    LEFT JOIN Screen sc
+    ON s.screen_id=sc.screen_id
+    LEFT JOIN Theater t
+    ON sc.theater_id=t.theater_id
+    WHERE s.schedule_id=p_id;
+
+    OPEN c_list;
+    LOOP
+        FETCH c_list INTO v_row;
+        EXIT WHEN c_list%NOTFOUND;
+
+        -- 수정: FETCH 변수 사용
+        v_mat(v_row.seat_row || TO_CHAR(v_row.seat_col)) := 1;
+    END LOOP;
+    CLOSE c_list;
+    
+    DBMS_OUTPUT.PUT_LINE('극장명: '|| v_tname);
+    DBMS_OUTPUT.PUT_LINE('영화명: '||v_title);
+    DBMS_OUTPUT.PUT_LINE('시작시간: '||TO_CHAR(v_date,'YY/MM/MM HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    DBMS_OUTPUT.PUT_LINE('현재 좌석');
+    
+   FOR vi IN ASCII('A')..ASCII('J') LOOP
+    FOR vj IN 1..10 LOOP
+        IF v_mat.EXISTS(CHR(vi) || vj) THEN
+            DBMS_OUTPUT.PUT('X ');
+        ELSE
+            DBMS_OUTPUT.PUT(vj||' ');
+        END IF;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('');
+END LOOP;
+
+END;
+/
+
+--스케줄 id를 넣어준다
+EXEC get_reserv_seat(1);
+
+
+--예약 하기
+CREATE OR REPLACE PROCEDURE seat_reserv (
+    p_SCHEDULE IN NUMBER,
+    p_seat_row IN VARCHAR2,
+    p_seat_col IN NUMBER
+)
+IS
+v_cnt NUMBER;
+v_seat_id NUMBER;
+v_sc_id NUMBER;
+BEGIN
+   SELECT COUNT(*)
+    INTO v_cnt
+    FROM MOVIE_RESERV r
+    LEFT JOIN seat s ON r.seat_id = s.seat_id
+    WHERE r.schedule_id = p_SCHEDULE
+      AND s.seat_row = p_seat_row
+      AND s.seat_col = p_seat_col;
+      
+       IF v_cnt > 0 THEN
+        DBMS_OUTPUT.PUT_LINE('이미 예약이 있는 자리입니다');
+    ELSE
+    
+        SELECT screen_id
+        INTO v_sc_id
+        FROM SCHEDULE
+        WHERE schedule_id=p_SCHEDULE;
+        
+        SELECT seat_id
+        INTO v_seat_id
+        FROM seat
+        WHERE screen_id=v_sc_id
+        AND seat_row=p_seat_row
+        AND seat_col=p_seat_col;
+        
+        
+        INSERT INTO MOVIE_RESERV VALUES (seq_tbl_MOVIE_RESERV.NEXTVAL,v_seat_id,p_SCHEDULE);
+        
+        DBMS_OUTPUT.PUT_LINE('예매가 완료 되었습니다');
+        DBMS_OUTPUT.PUT_LINE(p_seat_row||p_seat_col||' 좌석 예매');
+        
+    END IF;
+END;
+/
+
+--스케줄 id,행,열
+EXEC seat_reserv(1,'C',3);
+
+
+SELECT *
+FROM MOVIE_RESERV;
