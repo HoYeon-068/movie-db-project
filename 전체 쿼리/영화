@@ -1,0 +1,643 @@
+-- 카테고리 별 정렬
+--------------------------------------------------------------------- 예정작
+SELECT *
+FROM MOVIE m
+JOIN MOVIE_CATEGORY_REL r ON m.MOVIE_ID = r.MOVIE_ID
+JOIN MOVIE_CATEGORY c ON r.CATEGORY_ID = c.CATEGORY_ID
+WHERE c.CATEGORY_TITLE = '상영예정작' 
+ORDER BY m.MOVIE_TITLE;
+--
+CREATE OR REPLACE PROCEDURE up_search_movie_by_category (
+    p_category_title IN MOVIE_CATEGORY.CATEGORY_TITLE%TYPE,
+    p_sort_option    IN VARCHAR2 DEFAULT '가나다순'   -- '개봉일순' ,'가나다순'
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                              AS title,
+      m.rating_grade                             AS grade,
+      s.reservation_rate,
+      m.open_dt,
+      m.heart,
+      m.summary,
+      rv.avg_score
+    FROM movie m
+      JOIN movie_category_rel rel ON rel.movie_id = m.movie_id
+      JOIN movie_category     c   ON c.category_id = rel.category_id
+      LEFT JOIN movie_stat    s   ON s.movie_id    = m.movie_id
+      LEFT JOIN (
+        SELECT mr.movie_id, ROUND(AVG(mr.score), 1) AS avg_score
+        FROM movie_review mr
+        GROUP BY mr.movie_id
+      ) rv ON rv.movie_id = m.movie_id
+    WHERE UPPER(c.category_title) = UPPER(TRIM(p_category_title))
+    ORDER BY
+      CASE WHEN p_sort_option = '개봉일순' THEN m.open_dt END ASC,
+      CASE WHEN p_sort_option = '가나다순' THEN m.movie_title END ASC,
+      m.open_dt DESC, m.movie_title
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || NVL(r.grade, '-')
+      || ' | 예매율='      || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 개봉일='      || NVL(TO_CHAR(r.open_dt, 'YYYY-MM-DD'), '-')
+      || ' | 하트='        || NVL(TO_CHAR(r.heart), '-')
+      || ' | 줄거리='      || SUBSTR(NVL(r.summary, '-'), 1, 60)
+      || ' | avg(관람평)=' || NVL(TO_CHAR(r.avg_score), '-')
+    );
+  END LOOP;
+END;
+
+EXEC UP_SEARCH_MOVIE_BY_CATEGORY('상영예정작','가나다순');
+---------------------------------------------------------------------------------------- 박스오피스, MEGA ONLY, 필름소사이어티, 클래식소사이어티 (기본이 예매율 높은순 )
+SELECT *
+FROM MOVIE m
+JOIN MOVIE_CATEGORY_REL r ON m.MOVIE_ID = r.MOVIE_ID
+JOIN MOVIE_CATEGORY c ON r.CATEGORY_ID = c.CATEGORY_ID
+JOIN MOVIE_STAT s ON m.MOVIE_ID = s.MOVIE_ID
+WHERE c.CATEGORY_TITLE = '박스오피스' -- PL/SQL로 변수 받아서 변경하면 될듯
+ORDER BY s.RESERVATION_RATE desc;
+-- 박스오피스, MEGA ONLY, 필름소사이어티, 클래식소사이어티 + 개봉작만
+SELECT *
+FROM MOVIE m
+JOIN MOVIE_CATEGORY_REL r ON m.MOVIE_ID = r.MOVIE_ID
+JOIN MOVIE_CATEGORY c ON r.CATEGORY_ID = c.CATEGORY_ID
+JOIN MOVIE_STAT s ON m.MOVIE_ID = s.MOVIE_ID
+WHERE c.CATEGORY_TITLE = '박스오피스' and m.STATUS_CD = '상영' -- PL/SQL로 c.CATEGORY_TITLE 변수 받아서 변경하면 될듯
+ORDER BY s.RESERVATION_RATE desc;
+
+----
+CREATE OR REPLACE PROCEDURE up_movies_by_category_rank (
+    p_category_title IN MOVIE_CATEGORY.CATEGORY_TITLE%TYPE,
+    p_only_opened    IN VARCHAR2 DEFAULT 'N'   -- 'Y'면 m.status_cd = 개봉작만, 그외는 전체
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                              AS title,
+      m.rating_grade                             AS grade,
+      s.reservation_rate                         AS reservation_rate,
+      m.open_dt                                  AS open_dt,
+      m.heart                                    AS heart,
+      m.summary                                  AS summary,
+      rv.avg_score                               AS avg_score
+    FROM movie m
+      JOIN movie_category_rel rel ON rel.movie_id = m.movie_id
+      JOIN movie_category     c   ON c.category_id = rel.category_id
+      JOIN movie_stat         s   ON s.movie_id    = m.movie_id
+      LEFT JOIN (
+        SELECT mr.movie_id, ROUND(AVG(mr.score), 1) AS avg_score
+        FROM movie_review mr
+        GROUP BY mr.movie_id
+      ) rv ON rv.movie_id = m.movie_id
+    WHERE UPPER(c.category_title) = UPPER(TRIM(p_category_title))
+      AND (p_only_opened <> 'Y' OR m.status_cd = '상영')           -- 개봉작만(Y) 필터
+    ORDER BY
+      s.reservation_rate DESC NULLS LAST,
+      m.open_dt DESC,
+      m.movie_title
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || NVL(r.grade, '-')
+      || ' | 예매율='      || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 개봉일='      || NVL(TO_CHAR(r.open_dt, 'YYYY-MM-DD'), '-')
+      || ' | 하트='        || NVL(TO_CHAR(r.heart), '-')
+      || ' | 줄거리='      || SUBSTR(NVL(r.summary, '-'), 1, 60)
+      || ' | avg(관람평)=' || NVL(TO_CHAR(r.avg_score), '-')
+    );
+  END LOOP;
+END;
+
+EXEC UP_MOVIES_BY_CATEGORY_RANK('MEGA ONLY','Y');
+--------------------------------------------------------------------------- heart 테이블 따로 만들기..? 해야할듯................
+-- 하트 + 1
+UPDATE movie
+SET heart = heart + 1
+WHERE movie_id = 1;
+
+-- 하트 취소
+UPDATE movie
+SET heart = heart - 1
+WHERE movie_id = 1;
+----------------------
+CREATE OR REPLACE PROCEDURE up_toggle_movie_heart (
+    p_movie_id IN MOVIE.MOVIE_ID%TYPE,
+    p_is_add   IN VARCHAR2   -- 'Y'면 +1, 'N'이면 -1
+)
+IS
+  v_delta NUMBER;
+BEGIN
+  IF UPPER(p_is_add) = 'Y' THEN
+    v_delta := 1;
+  ELSE
+    v_delta := -1;
+  END IF;
+
+  UPDATE movie
+  SET heart = NVL(heart, 0) + v_delta
+  WHERE movie_id = p_movie_id;
+
+  COMMIT;
+END;
+
+-- 하트 추가
+EXEC up_toggle_movie_heart(1, 'Y');
+
+-- 하트 취소
+EXEC up_toggle_movie_heart(1, 'N');
+
+SELECT 
+    heart
+FROM movie
+WHERE movie_id = 1;
+
+-------------------------------------------- 
+CREATE OR REPLACE PROCEDURE UP_SEARCH_MOVIE_TITLE (
+    psearchMovieWord IN VARCHAR2
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                      AS title,
+      m.rating_grade                     AS grade,
+      s.reservation_rate,
+      m.open_dt,
+      m.heart,
+      rv.avg_score,
+      m.summary
+    FROM movie m
+    LEFT JOIN movie_stat s
+      ON s.movie_id = m.movie_id
+    LEFT JOIN (
+      SELECT
+        mr.movie_id,
+        ROUND(AVG(mr.score), 1) AS avg_score
+      FROM movie_review mr
+      GROUP BY mr.movie_id
+    ) rv
+      ON rv.movie_id = m.movie_id
+    WHERE REGEXP_LIKE(m.movie_title, psearchMovieWord, 'i')
+    ORDER BY s.reservation_rate DESC NULLS LAST,
+             m.open_dt DESC,
+             m.movie_title
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || r.grade
+      || ' | 예매율='   || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 개봉일='   || TO_CHAR(r.open_dt, 'YYYY-MM-DD')
+      || ' | 하트수='        || r.heart
+      || ' | 평균평점=' || NVL(TO_CHAR(r.avg_score), '-')
+      || ' | 줄거리='   || SUBSTR(r.summary, 1, 60)
+    );
+  END LOOP;
+END;
+
+
+EXEC UP_SEARCH_MOVIE_TITLE('어'); 
+--------------------------------------------------------------------------- 상세페이지
+CREATE OR REPLACE PROCEDURE UP_SEARCH_MOVIE_detail (
+       psearchMovieId NUMBER
+)
+IS
+BEGIN
+  FOR r IN (
+    SELECT
+      m.movie_title                      AS title,
+      m.rating_grade                     AS grade,
+      s.reservation_rate,
+      m.heart,
+      rv.avg_score,
+      s.audience_count
+    FROM movie m
+    LEFT JOIN movie_stat s
+      ON s.movie_id = m.movie_id
+    LEFT JOIN (
+      SELECT
+        mr.movie_id,
+        ROUND(AVG(mr.score), 1) AS avg_score
+      FROM movie_review mr
+      GROUP BY mr.movie_id
+    ) rv
+      ON rv.movie_id = m.movie_id
+    WHERE m.movie_id = psearchMovieId
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         r.title
+      || ' | 등급='        || r.grade
+      || ' | 예매율='   || NVL(TO_CHAR(r.reservation_rate), '-')
+      || ' | 하트수='        || r.heart
+      || ' | 관람평점=' || NVL(TO_CHAR(r.avg_score), '-')
+      || ' | 누적관객수='        || r.audience_count
+    );
+  END LOOP;
+END;
+
+EXEC UP_SEARCH_MOVIE_detail(1);
+-------------------------------------------------------------------------------- 주요정보 탭
+SELECT 
+    summary,
+    genre,
+    running_time,
+    rating_grade,
+    open_dt,
+    director
+FROM movie 
+WHERE movie_id = 1;
+-- + 상영타입
+SELECT 
+    t.SCREENTYPE_NAME
+FROM S_T_R r
+JOIN SCREEN_TYPE t ON r.screentype_id = t.screentype_id
+WHERE movie_id = 5;
+-- + 출연진
+SELECT 
+    cast_name
+FROM movie_cast_rel r
+JOIN CAST c ON r.cast_id = c.cast_id
+WHERE movie_id = 3;
+
+
+------------------
+CREATE OR REPLACE PROCEDURE up_print_movie_full (
+    p_movie_id IN movie.movie_id%TYPE
+)
+IS
+  -- 기본 정보용 레코드
+  CURSOR cur_movie IS
+    SELECT summary, genre, running_time, rating_grade, open_dt, director
+    FROM movie
+    WHERE movie_id = p_movie_id;
+
+  -- 상영타입 목록
+  CURSOR cur_screen_types IS
+    SELECT t.screentype_name
+    FROM s_t_r r
+    JOIN screen_type t ON t.screentype_id = r.screentype_id
+    WHERE r.movie_id = p_movie_id
+    ORDER BY t.screentype_name;
+
+  -- 출연진 목록
+  CURSOR cur_casts IS
+    SELECT c.cast_name
+    FROM movie_cast_rel r
+    JOIN "CAST" c ON c.cast_id = r.cast_id
+    WHERE r.movie_id = p_movie_id
+    ORDER BY c.cast_name;
+
+  v_m cur_movie%ROWTYPE;
+  v_cnt NUMBER := 0;
+BEGIN
+  -- 기본 정보
+  OPEN cur_movie;
+  FETCH cur_movie INTO v_m;
+  IF cur_movie%FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('[기본 정보]');
+    DBMS_OUTPUT.PUT_LINE('장르: ' || NVL(v_m.genre, '-'));
+    DBMS_OUTPUT.PUT_LINE('상영시간: ' || NVL(TO_CHAR(v_m.running_time), '-') || '분');
+    DBMS_OUTPUT.PUT_LINE('등급: ' || NVL(v_m.rating_grade, '-'));
+    DBMS_OUTPUT.PUT_LINE('개봉일: ' || NVL(TO_CHAR(v_m.open_dt, 'YYYY-MM-DD'), '-'));
+    DBMS_OUTPUT.PUT_LINE('감독: ' || NVL(v_m.director, '-'));
+    DBMS_OUTPUT.PUT_LINE('줄거리: ' || NVL(v_m.summary, '-'));
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('해당 movie_id가 없습니다: ' || p_movie_id);
+    CLOSE cur_movie;
+    RETURN;
+  END IF;
+  CLOSE cur_movie;
+
+  -- 상영타입
+  DBMS_OUTPUT.PUT_LINE(CHR(10) || '[상영타입]');
+  v_cnt := 0;
+  FOR rt IN cur_screen_types LOOP
+    v_cnt := v_cnt + 1;
+    DBMS_OUTPUT.PUT_LINE('- ' || rt.screentype_name);
+  END LOOP;
+  IF v_cnt = 0 THEN
+    DBMS_OUTPUT.PUT_LINE('(없음)');
+  END IF;
+
+  -- 출연진
+  DBMS_OUTPUT.PUT_LINE(CHR(10) || '[출연진]');
+  v_cnt := 0;
+  FOR rc IN cur_casts LOOP
+    v_cnt := v_cnt + 1;
+    DBMS_OUTPUT.PUT_LINE('- ' || rc.cast_name);
+  END LOOP;
+  IF v_cnt = 0 THEN
+    DBMS_OUTPUT.PUT_LINE('(없음)');
+  END IF;
+END;
+
+EXEC up_print_movie_full(4);
+--------------------------------------------------------------------------- 리뷰(실관람평 탭)
+-- 전체 리뷰 건수
+SELECT COUNT(mr.review_id)
+FROM MOVIE_REVIEW mr
+WHERE mr.movie_id = 1;
+
+-- 리뷰 내용
+WITH ranked AS (
+    SELECT
+        mr.review_id,
+        mr.score,
+        mr.review_txt,
+        mr.reg_dt,
+        mr.review_like,
+        mr.mem_id,
+        SUBSTR(mr.mem_id, 1, 2) || '**' || SUBSTR(mr.mem_id, 5) as masked_mem_id,
+        ROW_NUMBER() OVER (ORDER BY mr.reg_dt DESC) AS rn -- 최신순
+--        ROW_NUMBER() OVER (ORDER BY mr.review_like DESC) AS rn -- 공감순
+--        ROW_NUMBER() OVER (ORDER BY mr.score DESC) AS rn -- 평점순
+    FROM movie_review mr
+    WHERE mr.movie_id = 1
+)
+
+SELECT *
+FROM ranked
+WHERE rn BETWEEN 1 AND 10;
+
+-- 리뷰 관람 포인트
+SELECT rvr.review_id, v.viewpoint_name
+FROM review_viewpoint_rel rvr
+JOIN viewpoint v ON v.viewpoint_id = rvr.viewpoint_id
+WHERE rvr.review_id = 1;
+----------------------------------
+CREATE OR REPLACE PROCEDURE up_print_movie_reviews (
+    p_movie_id IN movie_review.movie_id%TYPE,
+    p_sort     IN VARCHAR2 DEFAULT '최신순',
+    p_from_rn  IN NUMBER   DEFAULT 1,
+    p_to_rn    IN NUMBER   DEFAULT 10
+)
+IS
+  v_total NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_total
+  FROM movie_review mr
+  WHERE mr.movie_id = p_movie_id;
+
+  DBMS_OUTPUT.PUT_LINE('[전체 리뷰 수] ' || v_total);
+
+  FOR r IN (
+    WITH ranked AS (
+      SELECT
+          mr.review_id,
+          mr.score,
+          mr.review_txt,
+          mr.reg_dt,
+          mr.review_like,
+          SUBSTR(mr.mem_id, 1, 2) || '**' || SUBSTR(mr.mem_id, 5) AS masked_mem_id,
+          ( SELECT LISTAGG(v.viewpoint_name, ', ') WITHIN GROUP (ORDER BY v.viewpoint_name)
+            FROM review_viewpoint_rel rvr
+            JOIN viewpoint v ON v.viewpoint_id = rvr.viewpoint_id
+            WHERE rvr.review_id = mr.review_id ) AS viewpoints,
+          ROW_NUMBER() OVER (
+            ORDER BY
+              CASE WHEN p_sort IN ('최신순','RECENT') THEN mr.reg_dt      END DESC,
+              CASE WHEN p_sort IN ('공감순','LIKE')   THEN mr.review_like END DESC,
+              CASE WHEN p_sort IN ('평점순','SCORE')  THEN mr.score       END DESC,
+              mr.review_id DESC
+          ) rn
+      FROM movie_review mr
+      WHERE mr.movie_id = p_movie_id
+    )
+    SELECT *
+    FROM ranked
+    WHERE rn BETWEEN p_from_rn AND p_to_rn
+    ORDER BY rn
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE(
+         '[리뷰ID=' || r.review_id || ']'
+      || ' 점수='   || r.score
+      || ' | 공감=' || r.review_like
+      || ' | 등록일=' || TO_CHAR(r.reg_dt, 'YYYY-MM-DD HH24:MI')
+      || ' | 작성자=' || r.masked_mem_id
+    );
+    IF r.viewpoints IS NOT NULL THEN
+      DBMS_OUTPUT.PUT_LINE('  - 관람 포인트: ' || r.viewpoints);
+    END IF;
+    DBMS_OUTPUT.PUT_LINE('  - 내용: ' || r.review_txt);
+  END LOOP;
+END;
+
+EXEC up_print_movie_reviews(3, '최신순', 1, 10);
+EXEC up_print_movie_reviews(1, '공감순', 1, 10);
+EXEC up_print_movie_reviews(1, '평점순', 1, 10);
+
+--------------------------------------------------------------------------- 리뷰 작성
+
+SELECT * 
+FROM movie_review m
+JOIN review_viewpoint_rel r ON m.review_id = r.review_id;
+
+SELECT * FROM review_viewpoint_rel;
+SELECT * FROM table
+
+
+INSERT INTO movie_review 
+(
+    review_id,
+    movie_id,
+    mem_id,
+    score,
+    review_txt,
+    reg_dt,
+    mod_dt,
+    review_like
+)
+VALUES
+(
+    11,
+    1,
+    'user01',
+    7,
+    '감동의 눈물을 흘렸습니다 최고',
+    SYSDATE,
+    SYSDATE,
+    0
+);
+
+--
+INSERT INTO review_viewpoint_rel
+(
+    riview_viewpoint_rel_id,
+    review_id,
+    viewpoint_id
+)
+VALUES 
+(
+    11,
+    11,
+    5
+);
+
+-------------
+CREATE OR REPLACE PROCEDURE pr_insert_review_with_point (
+    p_review_id   IN NUMBER,
+    p_movie_id    IN NUMBER,
+    p_mem_id      IN VARCHAR2,
+    p_score       IN NUMBER,
+    p_review_txt  IN VARCHAR2,
+    p_viewpoint_id IN NUMBER,
+    p_rel_id      IN NUMBER  -- review_viewpoint_rel_id (단일 PK를 쓰는 구조라면 필요)
+)
+IS
+BEGIN
+  INSERT INTO movie_review (
+      review_id, movie_id, mem_id, score, review_txt, reg_dt, mod_dt, review_like
+  ) VALUES (
+      p_review_id, p_movie_id, p_mem_id, p_score, p_review_txt, SYSDATE, SYSDATE, 0
+  );
+
+  INSERT INTO review_viewpoint_rel (
+      riview_viewpoint_rel_id, review_id, viewpoint_id  -- // 테이블 수정해야함 오타임 ㄹㅇㅋㅋ
+  ) VALUES (
+      p_rel_id, p_review_id, p_viewpoint_id
+  );
+
+  COMMIT;
+END;
+
+--
+
+BEGIN
+  pr_insert_review_with_point(
+    p_review_id    => 12,   -- > 이거 숫자 바꿔주기
+    p_movie_id     => 1,
+    p_mem_id       => 'user02',
+    p_score        => 8,
+    p_review_txt   => '감동의 눈물을 흘렸습니다 최고이지만 화가나네요',
+    p_viewpoint_id => 5,
+    p_rel_id       => 12  --> 숫자 바꿔주기
+  );
+END;
+
+---------------------------------------------------------------- 리뷰 수정
+UPDATE movie_review
+SET
+  score      = 8,
+  review_txt = '두 번째 관람 후, 음악이 특히 좋았어요',
+  mod_dt     = SYSDATE
+WHERE review_id = 11
+  AND mem_id   = 'user01';  -- 작성자 본인만 수정하려면 유지
+
+-- 기존 관람포인트 모두 삭제
+DELETE FROM review_viewpoint_rel
+WHERE review_id = 11;
+
+-- 새 관람포인트 넣기 (예: 2,4,5)
+INSERT INTO review_viewpoint_rel (riview_viewpoint_rel_id, review_id, viewpoint_id)
+VALUES
+(
+    11,
+    11,
+    5
+)
+
+---------
+CREATE OR REPLACE PROCEDURE pr_update_review (
+    p_review_id       IN NUMBER,        -- 수정할 리뷰 ID
+    p_mem_id          IN VARCHAR2,      -- 작성자 ID
+    p_new_score       IN NUMBER,        -- 새 평점
+    p_new_review_txt  IN VARCHAR2,      -- 새 리뷰 내용
+    p_new_view_id     IN NUMBER,        -- 새 관람포인트 ID
+    p_rel_id          IN NUMBER DEFAULT NULL  -- (옵션) 새 REL PK 직접 지정
+)
+IS
+  v_next_id    NUMBER := NULL;
+  v_cnt_owner  NUMBER := 0;
+BEGIN
+  -- 1) 작성자 검증
+  SELECT COUNT(*) INTO v_cnt_owner
+  FROM movie_review
+  WHERE review_id = p_review_id
+    AND mem_id    = p_mem_id;
+
+  IF v_cnt_owner = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001, '리뷰 작성자만 수정할 수 있습니다.');
+  END IF;
+
+  -- 2) 리뷰 본문/점수 수정
+  UPDATE movie_review
+     SET score      = p_new_score,
+         review_txt = p_new_review_txt,
+         mod_dt     = SYSDATE
+   WHERE review_id  = p_review_id
+     AND mem_id     = p_mem_id;
+
+  -- 3) 기존 관람포인트 전체 삭제
+  DELETE FROM review_viewpoint_rel
+   WHERE review_id = p_review_id;
+
+  -- 4) 새 관람포인트 1건 삽입
+  IF p_rel_id IS NOT NULL THEN
+    v_next_id := p_rel_id;
+  ELSE
+    SELECT NVL(MAX(riview_viewpoint_rel_id), 0) + 1
+      INTO v_next_id
+      FROM review_viewpoint_rel;
+  END IF;
+
+  INSERT INTO review_viewpoint_rel (
+    riview_viewpoint_rel_id,
+    review_id,
+    viewpoint_id
+  ) VALUES (
+    v_next_id,
+    p_review_id,
+    p_new_view_id
+  );
+
+  COMMIT;
+
+EXCEPTION
+  WHEN DUP_VAL_ON_INDEX THEN
+    ROLLBACK;
+    RAISE_APPLICATION_ERROR(-20002, '관람포인트 PK가 중복됩니다. p_rel_id를 새로운 값으로 넣거나 시퀀스/트리거를 설정하세요.');
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
+END;
+
+
+
+--
+EXEC pr_update_review(12, 'user02', 7, '이거 수정됨?', 7);
+
+---
+SELECT * FROM movie_review;
+SELECT * FROM review_viewpoint_rel;
+
+-------------------------------------------------------------리뷰 공감
+CREATE OR REPLACE PROCEDURE up_toggle_review_like (
+    p_review_id IN movie_review.review_id%TYPE,
+    p_is_add    IN VARCHAR2              -- 'Y'면 +1, 그 외는 -1
+)
+IS
+  v_delta NUMBER;
+BEGIN
+  IF UPPER(p_is_add) = 'Y' THEN
+    v_delta := 1;
+  ELSE
+    v_delta := -1;
+  END IF;
+
+  UPDATE movie_review
+     SET review_like = GREATEST(NVL(review_like, 0) + v_delta, 0)
+   WHERE review_id   = p_review_id;
+
+  COMMIT;
+END;
+-----
+-- 공감 +1
+EXEC up_toggle_review_like(11, 'Y');
+
+-- 공감 -1 
+EXEC up_toggle_review_like(11, 'N');
+
+SELECT * FROM movie_review;
+-----------------------------------------------------------------------
