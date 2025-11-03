@@ -1,3 +1,4 @@
+-- 전체 쿼리
 -- 지역 입력 -> 극장 출력 + 이벤트 + 공지사항
 CREATE OR REPLACE PROCEDURE regionPage 
 (
@@ -60,6 +61,57 @@ EXCEPTION
 END;
 
 EXEC regionPage('서울');
+
+
+
+-- 상영시간표
+CREATE OR REPLACE PROCEDURE showTimePage 
+(
+    pregion_name IN region.region_name%TYPE,
+    ptheater_name IN theater.theater_name%TYPE
+)
+IS
+    vregion_name region.region_name%TYPE;
+    vtheater_name theater.theater_name%TYPE;
+BEGIN
+    SELECT region_name, theater_name 
+            INTO vregion_name, vtheater_name
+    FROM region, theater
+    WHERE region_name=pregion_name 
+            AND theater_name = ptheater_name ;
+            
+    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
+    FOR r IN (
+        SELECT r.region_name 지역명, theater_name 극장
+        FROM region r JOIN theater t ON r.region_id = t.region_id
+        WHERE r.region_name = pregion_name 
+            AND (ptheater_name IS NULL OR t.theater_name = ptheater_name)
+        ORDER BY t.theater_name
+    )
+    LOOP   
+    DBMS_OUTPUT.PUT_LINE(r.지역명 || ' - ' || r.극장);
+    END LOOP;
+    
+    -- 시간표
+    DBMS_OUTPUT.PUT_LINE('  ');
+    DBMS_OUTPUT.PUT_LINE('== 상영시간표 ==');
+    FOR sch IN (
+        SELECT theater_name 극장, movie_title 영화, TO_CHAR(s.start_date,'YYYY-MM-DD HH24:MI') 상영시간, tot_seat "총 좌석수"
+        FROM movie m JOIN schedule s ON m.movie_id = s.movie_id
+                JOIN ticketPrice p ON s.schedule_id = p.schedule_id
+                JOIN theater t ON t.theater_id = p.theater_id 
+                JOIN screen scr ON scr.screen_id = p.screen_id
+        WHERE t.theater_name = ptheater_name
+        ORDER BY movie_title, start_date
+    )
+    LOOP
+    DBMS_OUTPUT.PUT_LINE('[' ||sch.영화 || '] - 상영시간 :  ' || sch.상영시간 || ' - ' || '총 좌석수 : ' || sch."총 좌석수");
+    END LOOP;
+EXCEPTION
+    WHEN no_data_found THEN
+        RAISE_APPLICATION_ERROR(-20001, '> 잘못된 검색.');
+END;
+EXEC showTimePage('서울', '강남 CGV');
 
 -- 극장정보 출력  + 극장 공지사항 5 개 + 스토어 상품 2개
 CREATE OR REPLACE PROCEDURE regionTheaterPage 
@@ -189,52 +241,3 @@ EXCEPTION
 END;
 
 EXEC ticketPricePage('서울', '강남 CGV');
-
--- 상영시간표
-CREATE OR REPLACE PROCEDURE showTimePage 
-(
-    pregion_name IN region.region_name%TYPE,
-    ptheater_name IN theater.theater_name%TYPE
-)
-IS
-    vregion_name region.region_name%TYPE;
-    vtheater_name theater.theater_name%TYPE;
-BEGIN
-    SELECT region_name, theater_name 
-            INTO vregion_name, vtheater_name
-    FROM region, theater
-    WHERE region_name=pregion_name 
-            AND theater_name = ptheater_name ;
-            
-    DBMS_OUTPUT.PUT_LINE('== 지역 - 극장 ==');
-    FOR r IN (
-        SELECT r.region_name 지역명, theater_name 극장
-        FROM region r JOIN theater t ON r.region_id = t.region_id
-        WHERE r.region_name = pregion_name 
-            AND (ptheater_name IS NULL OR t.theater_name = ptheater_name)
-        ORDER BY t.theater_name
-    )
-    LOOP   
-    DBMS_OUTPUT.PUT_LINE(r.지역명 || ' - ' || r.극장);
-    END LOOP;
-    
-    -- 시간표
-    DBMS_OUTPUT.PUT_LINE('  ');
-    DBMS_OUTPUT.PUT_LINE('== 상영시간표 ==');
-    FOR sch IN (
-        SELECT theater_name 극장, movie_title 영화, TO_CHAR(s.start_date,'YYYY-MM-DD HH24:MI') 상영시간, tot_seat "총 좌석수"
-        FROM movie m JOIN schedule s ON m.movie_id = s.movie_id
-                JOIN ticketPrice p ON s.schedule_id = p.schedule_id
-                JOIN theater t ON t.theater_id = p.theater_id 
-                JOIN screen scr ON scr.screen_id = p.screen_id
-        WHERE t.theater_name = ptheater_name
-        ORDER BY movie_title, start_date
-    )
-    LOOP
-    DBMS_OUTPUT.PUT_LINE('[' ||sch.영화 || '] - 상영시간 :  ' || sch.상영시간 || ' - ' || '총 좌석수 : ' || sch."총 좌석수");
-    END LOOP;
-EXCEPTION
-    WHEN no_data_found THEN
-        RAISE_APPLICATION_ERROR(-20001, '> 잘못된 검색.');
-END;
-EXEC showTimePage('서울', '강남 CGV');
